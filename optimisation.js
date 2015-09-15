@@ -190,11 +190,24 @@ optimisation.minimum_cost_display = function(frames) {
 }
 
 optimisation.simplex = function(objective,equations) {
+
+	var frames = [];
+	function frame(extra) {
+		var data = {
+			tableau: tableau,
+			objective: objective
+		}
+		frames.push(makeFrame(data,extra));
+	}
+
 	var num_variables = objective.length;
 	objective = objective.map(function(x){return -x});
 	objective.push(0);
 	var tableau = equations.slice();
 	tableau.splice(0,0,objective);
+
+	frame();
+
 	var steps = 0;
 	while(steps<1000) {
 		steps += 1;
@@ -244,6 +257,7 @@ optimisation.simplex = function(objective,equations) {
 			}
 		}
 
+		frame({pivot_row: pivot_row, pivot_column: pivot_column});
 	}
 	var out = [];
 	for(var i=0;i<num_variables;i++) {
@@ -255,10 +269,60 @@ optimisation.simplex = function(objective,equations) {
 			out[i] = 0;
 		}
 	}
+	return {result: out, frames: frames};
+}
+
+function rationalNumber(n) {
+	var out;
+	var f = Numbas.math.rationalApproximation(Math.abs(n));
+	if(f[1]==1)
+		out = Math.abs(f[0]).toString();
+	else
+		out = f[0]+'/'+f[1];
+	if(n<0)
+		out='-'+out;
+
 	return out;
 }
 
+optimisation.simplex_display = function(frames) {
+	var div = $('<div/>');
+	var frame_htmls = frames.map(function(frame) {
+		var table = $('<table class="optimisation-table simplex"><thead></thead><tbody></tbody></table>');
+		div.append(table);
+		frame.tableau.forEach(function(row,i) {
+			var tr = $('<tr/>');
+			if(i==frame.pivot_row) {
+				tr.addClass('pivot-row');
+			}
+			row.forEach(function(x,j) {
+				var td = $('<td/>').text(rationalNumber(x));
+				if(j==frame.pivot_column) {
+					td.addClass('pivot-column');
+				}
+				tr.append(td);
+			});
+			table.find('tbody').append(tr);
+		});
+	});
+	return div;
+}
+
+var star = "star", prime = "prime", nomask = '';
 optimisation.hungarian = function(costs) {
+
+	var frames = [];
+	function frame(extra) {
+		var data = {
+			grid: grid,
+			row_covered: row_covered,
+			column_covered: column_covered,
+			mask: mask,
+			message: message
+		}
+		frames.push(makeFrame(data,extra));
+	}
+
 	var grid = Numbas.util.copyarray(costs,true);
 
 	var n = grid.length;
@@ -269,7 +333,6 @@ optimisation.hungarian = function(costs) {
 	var row_covered = [];
 	var column_covered = [];
 	var mask = [];
-	var star = "*", prime = "'", nomask = ' ';
 	var found_prime;
 	for(i=0;i<n;i++) {
 		star_rows.push(0);
@@ -280,14 +343,20 @@ optimisation.hungarian = function(costs) {
 		}
 		mask.push(row);
 	}
-	
+
+	frame();
+
 	var step = 1;
 	var steps = 0;
 	while(step!=0 && steps<20) {
 		steps += 1;
+
+		var message = '';
+
 		switch(step) {
 		case 1:
 			// step 1 - find cheapest element in each row
+			message = "Find lowest cost element in each row";
 			for(i=0;i<n;i++) {
 				var lowest = null;
 				for(j=0;j<n;j++) {
@@ -299,6 +368,7 @@ optimisation.hungarian = function(costs) {
 					grid[i][j] -= lowest;
 				}
 			}
+			frame();
 			step = 2;
 			break;
 		case 2:
@@ -309,6 +379,7 @@ optimisation.hungarian = function(costs) {
 						star_rows[i] += 1;
 						star_columns[j] += 1;
 						mask[i][j] = star;
+						frame();
 					}
 				}
 			}
@@ -317,11 +388,19 @@ optimisation.hungarian = function(costs) {
 		case 3:
 			// step 3 - cover columns with starred zeros
 			var covered_column_count = 0;
+			var changed = false;
 			for(i=0;i<n;i++) {
 				if(star_columns[i]!==0) {
+					if(!column_covered[i]) {
+						changed = true;
+					}
 					column_covered[i] = true;
 				}
 				covered_column_count += column_covered[i] ? 1 : 0;
+			}
+			
+			if(changed) {
+				frame();
 			}
 
 			if(covered_column_count==n) {
@@ -350,6 +429,7 @@ optimisation.hungarian = function(costs) {
 								}
 								row_covered[i] = true;
 								column_covered[j] = false;
+								frame();
 								return;
 							}
 						}
@@ -398,6 +478,7 @@ optimisation.hungarian = function(costs) {
 					star_columns[cell.j] += 1;
 				}
 			});
+			frame();
 
 			for(i=0;i<n;i++) {
 				row_covered[i] = false;
@@ -408,6 +489,7 @@ optimisation.hungarian = function(costs) {
 					}
 				}
 			}
+			frame();
 
 			step = 3;
 			break;
@@ -434,6 +516,7 @@ optimisation.hungarian = function(costs) {
 					}
 				}
 			}
+			frame();
 
 			step = 4;
 			break;
@@ -450,7 +533,28 @@ optimisation.hungarian = function(costs) {
 			}
 		}
 	}
-	return assignments;
+	return {result: assignments, frames: frames};
 }
 
+optimisation.hungarian_display = function(frames) {
+	var div = $('<div/>');
+	var frame_htmls = frames.map(function(frame) {
+		var table = $('<table class="optimisation-table hungarian"><thead></thead><tbody></tbody></table>');
+		div.append(table);
+		frame.grid.forEach(function(row,i) {
+			var tr = $('<tr/>');
+			table.find('tbody').append(tr);
+			row.forEach(function(x,j) {
+				var td = $('<td/>').text(x);
+				if(frame.row_covered[i] || frame.column_covered[j]) {
+					td.addClass('covered');
+				}
+				td.addClass(frame.mask[i][j]);
+				tr.append(td);
+			});
+		});
+	});
+	
+	return div;
+}
 });

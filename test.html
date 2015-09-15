@@ -18,6 +18,8 @@
 
 		<script src="optimisation.js"></script>
 
+		<link rel="stylesheet" href="/numbas/dev/themes/default/files/resources/exam.css"></link>
+
 </head>
 <body>
 		<script>
@@ -28,16 +30,26 @@
 					console.log(a.map(function(r){return r.join('\t')}).join('\n'));
 				}
 				var result = optimisation.nw_corner([359,476,435],[481,436,150]);
+				$('body').append('<h1>NW corner</h1>');
 				$('body').append(optimisation.nw_corner_display(result.frames));
 				var result = optimisation.minimum_cost([610,341,281],[449,325,458],[[6,7,13],[8,9,14],[12,11,10]]);
+				$('body').append('<h1>Minimum cost</h1>');
 				$('body').append(optimisation.minimum_cost_display(result.frames));
 
+				$('body').append('<h1>Simplex</h1>');
+				var result = optimisation.simplex([1,1,0,0],[[2,1,1,0,4],[1,2,0,1,3]]);
+				$('body').append(optimisation.simplex_display(result.frames));
+
+				$('body').append('<h1>Hungarian</h1>');
+				var result = optimisation.hungarian([[1,2,3],[2,4,6],[3,6,9]]);
+				$('body').append(optimisation.hungarian_display(result.frames));
+				var result = optimisation.hungarian([[1,2,3,4,5],[2,4,6,3,2],[3,6,9,6,3],[4,6,3,2,6],[4,7,4,8,2]]);
+				$('body').append(optimisation.hungarian_display(result.frames));
 				/*
 				show(result.result);
 
 				console.log(optimisation.simplex([1,1,0,0],[[2,1,1,0,4],[1,2,0,1,3]]));
 				console.log(optimisation.simplex([1,0.5,0,0],[[2,1,1,0,4],[1,2,0,1,3]]));
-				show(optimisation.hungarian([[1,2,3],[2,4,6],[3,6,9]]));
 				show(optimisation.hungarian([[1,2,3],[3,6,9],[2,4,2]]));
 				*/
 			});
@@ -46,6 +58,65 @@
 		<style type="text/css">
 			.optimisation-table .changed {
 				background-color: yellow;
+			}
+
+			.optimisation-table.minimum-cost-tableau .supply-label {
+				border-right: 1px solid;
+			}
+
+			.optimisation-table.minimum-cost-tableau tbody tr:not(:last-child) :last-child {
+				border-left: 1px solid;
+			}
+
+			.optimisation-table.minimum-cost-tableau tbody tr:last-child td {
+				border-top: 1px solid;
+			}
+
+			.optimisation-table.simplex .pivot-row {
+				background: #eee;
+			}
+			.optimisation-table.simplex .pivot-column {
+				background: #eee;
+			}
+			.optimisation-table.simplex .pivot-row .pivot-column {
+				font-weight: bold;
+			}
+			.optimisation-table.simplex td:last-child {
+				border-left: 1px solid;
+			}
+
+			.optimisation-table.hungarian .covered {
+				background: #888;
+				color: #ccc;
+			}
+
+			.optimisation-table.hungarian .star {
+				color: #aa0;
+				font-weight: bold;
+			}
+			.optimisation-table.hungarian .star:after {
+				content: '*';
+			}
+
+			.optimisation-table.hungarian .prime {
+				color: #00a;
+				font-weight: bold;
+			}
+			.optimisation-table.hungarian .prime:after {
+				content: '\'';
+			}
+
+			table {
+				border: 1px solid;
+				border-spacing: 0;
+			}
+			td, th {
+				box-sizing: border-box;
+				width: 2em;
+				height: 2em;
+				padding: 0 0.5em;
+				text-align: center;
+				vertical-align: middle;
 			}
 		</style>
 </body>
