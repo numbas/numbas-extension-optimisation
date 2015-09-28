@@ -1,0 +1,124 @@
+.optimisation-display .frame {
+	margin-bottom: 2em;
+}
+
+.optimisation-table .changed {
+	background-color: yellow !important;
+}
+
+.optimisation-table.minimum-cost-costs,.optimisation-table.minimum-cost-tableau {
+    display: inline-block;
+    margin-left: 1em;
+    margin-right: 1em;
+    vertical-align: top;
+}
+
+.optimisation-table.minimum-cost-tableau .supply-label {
+	border-right: 1px solid;
+}
+
+.optimisation-table.minimum-cost-tableau tbody tr:not(:last-child) :last-child {
+	border-left: 1px solid;
+}
+
+.optimisation-table.minimum-cost-tableau tbody tr:last-child td {
+	border-top: 1px solid;
+}
+
+.optimisation-table.simplex .pivot-row {
+	background: #eee !important;
+}
+.optimisation-table.simplex .pivot-column {
+	background: #eee !important;
+}
+.optimisation-table.simplex .pivot-row .pivot-column {
+	font-weight: bold;
+}
+.optimisation-table.simplex td:last-child {
+	border-left: 1px solid;
+}
+
+.optimisation-table.hungarian {
+    position: relative;
+}
+
+.optimisation-table.hungarian td {
+	text-align: center !important;
+}
+
+.optimisation-table.hungarian .row-covered {
+	position: absolute;
+	left: 0;
+	width: 100%;
+	border: 1px solid black;
+}
+
+.optimisation-table.hungarian .column-covered {
+	position: absolute;
+	top: 0;
+	height: 100%;
+	border: 1px solid black;
+}
+
+.optimisation-table.hungarian .star .element {
+	color: #aa0;
+	font-weight: bold;
+	border: 1px solid black;
+	border-radius: 50%;
+}
+
+.optimisation-table.hungarian .element {
+    width: 1em;
+    height: 1em;
+    display: inline-block;
+    box-sizing: border-box;
+    line-height: 1em;
+}
+
+.optimisation-table.hungarian .star:after {
+	/*content: '*';*/
+}
+
+.optimisation-table.hungarian .strike .element {
+	text-decoration: line-through;
+}
+
+.optimisation-table.stepping-stone .cell {
+	border: 1px solid gray;
+}
+
+.optimisation-table.stepping-stone .shadow-cost, .optimisation-table.stepping-stone .cost {
+	font-size: 0.8em;
+}
+.optimisation-table.stepping-stone .shadow-cost {
+	float: left;
+	margin-right: 0.5em;
+}
+.optimisation-table.stepping-stone .cost {
+	float: right;
+	margin-left: 0.5em;
+}
+.optimisation-table.stepping-stone .assignment {
+	margin: 0 1em;
+}
+.optimisation-table.stepping-stone .path {
+	background: #ccc !important;
+}
+.optimisation-table.stepping-stone .path.first {
+	color: red;
+	font-weight: bold;
+}
+
+.optimisation-table {
+	border-spacing: 0;
+	border-collapse: collapse;
+}
+.optimisation-table td, .optimisation-table th {
+	box-sizing: border-box;
+	width: 2em;
+	height: 2em;
+	padding: 0 0.5em;
+	text-align: center;
+	vertical-align: middle;
+}
+

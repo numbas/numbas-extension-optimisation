@@ -19,6 +19,7 @@
 		<script src="optimisation.js"></script>
 
 		<link rel="stylesheet" href="/numbas/dev/themes/default/files/resources/exam.css"></link>
+		<link rel="stylesheet" href="optimisation.css"></link>
 
 </head>
 <body>
@@ -29,10 +30,16 @@
 				window.show = function(a) {
 					console.log(a.map(function(r){return r.join('\t')}).join('\n'));
 				}
+				function matrix(l) {
+					l.rows = l.length;
+					l.columns = l[0].length;
+					return l;
+				}
+
 				var result = optimisation.nw_corner([359,476,435],[481,436,150]);
 				$('body').append('<h1>NW corner</h1>');
 				$('body').append(optimisation.nw_corner_display(result.frames));
-				var result = optimisation.minimum_cost([610,341,281],[449,325,458],[[6,7,13],[8,9,14],[12,11,10]]);
+				var result = optimisation.minimum_cost([610,341,281],[325,449,458],matrix([[1,1,1],[1,1,1],[1,1,1]]));
 				$('body').append('<h1>Minimum cost</h1>');
 				$('body').append(optimisation.minimum_cost_display(result.frames));
 
@@ -45,79 +52,66 @@
 				$('body').append(optimisation.hungarian_display(result.frames));
 				var result = optimisation.hungarian([[1,2,3,4,5],[2,4,6,3,2],[3,6,9,6,3],[4,6,3,2,6],[4,7,4,8,2]]);
 				$('body').append(optimisation.hungarian_display(result.frames));
-				/*
-				show(result.result);
 
-				console.log(optimisation.simplex([1,1,0,0],[[2,1,1,0,4],[1,2,0,1,3]]));
-				console.log(optimisation.simplex([1,0.5,0,0],[[2,1,1,0,4],[1,2,0,1,3]]));
-				show(optimisation.hungarian([[1,2,3],[3,6,9],[2,4,2]]));
-				*/
+				$('body').append('<h1>Stepping stone</h1>');
+				var assignments = matrix([[0,0,20,0],[17,0,0,21],[0,3,1,0]]);
+				var costs = matrix([[8,4,1,5],[7,2,8,9],[5,2,4,9]]);
+				var res = optimisation.stepping_stone(assignments,costs);
+				$('body').append(optimisation.stepping_stone_display(res.frames));
+
+				var assignments = matrix([[0,33,0,0],[0,13,38,0],[36,0,0,18]]);
+				var costs = matrix([[7,4,4,6],[3,7,4,5],[2,8,5,4]]);
+				var res = optimisation.stepping_stone(assignments,costs);
+				$('body').append(optimisation.stepping_stone_display(res.frames));
+
+				var assignments = matrix([[0,0,13,30],[0,9,0,0],[7,0,0,0]]);
+				var costs = matrix([[7,9,2,1],[3,8,7,4],[1,5,4,1]]);
+				var res = optimisation.stepping_stone(assignments,costs);
+				$('body').append(optimisation.stepping_stone_display(res.frames));
+
+				var assignments = matrix([[10,15,0,0],[0,0,0,6],[0,3,19,0]]);
+				var costs = matrix([[9,4,2,5],[6,7,8,1],[7,3,2,2]]);
+				var res = optimisation.stepping_stone(assignments,costs);
+				$('body').append(optimisation.stepping_stone_display(res.frames));
+
+				var assignments = matrix([[21,0,0,0],[11,51,0,0],[0,0,26,57]]);
+				var costs = matrix([[2,5,1,6],[4,2,6,6],[4,6,1,4]]);
+				var res = optimisation.stepping_stone(assignments,costs);
+				$('body').append(optimisation.stepping_stone_display(res.frames));
+
+				try {
+					var assignments = matrix([[0,106,0,0],[34,26,0,79],[0,0,189,0]]);
+					var costs = matrix([[3,1,3,2],[7,3,7,9],[2,4,2,4]]);
+					var res = optimisation.stepping_stone(assignments,costs);
+					$('body').append(optimisation.stepping_stone_display(res.frames));
+				} catch(e) {
+				}
+
+				console.clear();
+
+				var a = matrix([[0,0,0,0],[0,0,0,0],[0,0,0,0]]);
+				var al = [[true,true,true,true],[true,true,false,false],[false,false,false,false]];
+				var c = matrix([[1,2,3,4],[2,3,4,1],[3,4,1,2],[4,3,2,1]]);
+				console.log(optimisation.assignment_is_optimal(a,al,c));
+
+				console.clear();
+
+				var c = matrix([[1,6,6,5],[9,4,1,2],[8,5,2,1],[1,8,2,5]]);
+				try{
+					optimisation.hungarian_phil(c);
+				} catch(e) {
+					console.log(e);
+				}
+				var c = matrix([[6,2,6,9],[3,7,8,5],[4,8,4,9],[2,7,6,1]]);
+				try{
+					optimisation.hungarian_phil(c);
+				} catch(e) {
+					console.log(e);
+				}
 			});
 		</script>
 
 		<style type="text/css">
-			.optimisation-table .changed {
-				background-color: yellow;
-			}
-
-			.optimisation-table.minimum-cost-tableau .supply-label {
-				border-right: 1px solid;
-			}
-
-			.optimisation-table.minimum-cost-tableau tbody tr:not(:last-child) :last-child {
-				border-left: 1px solid;
-			}
-
-			.optimisation-table.minimum-cost-tableau tbody tr:last-child td {
-				border-top: 1px solid;
-			}
-
-			.optimisation-table.simplex .pivot-row {
-				background: #eee;
-			}
-			.optimisation-table.simplex .pivot-column {
-				background: #eee;
-			}
-			.optimisation-table.simplex .pivot-row .pivot-column {
-				font-weight: bold;
-			}
-			.optimisation-table.simplex td:last-child {
-				border-left: 1px solid;
-			}
-
-			.optimisation-table.hungarian .covered {
-				background: #888;
-				color: #ccc;
-			}
-
-			.optimisation-table.hungarian .star {
-				color: #aa0;
-				font-weight: bold;
-			}
-			.optimisation-table.hungarian .star:after {
-				content: '*';
-			}
-
-			.optimisation-table.hungarian .prime {
-				color: #00a;
-				font-weight: bold;
-			}
-			.optimisation-table.hungarian .prime:after {
-				content: '\'';
-			}
-
-			table {
-				border: 1px solid;
-				border-spacing: 0;
-			}
-			td, th {
-				box-sizing: border-box;
-				width: 2em;
-				height: 2em;
-				padding: 0 0.5em;
-				text-align: center;
-				vertical-align: middle;
-			}
 		</style>
 </body>
 </html>
