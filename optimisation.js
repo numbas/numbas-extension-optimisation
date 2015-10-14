@@ -1340,6 +1340,87 @@ optimisation.solve_linear_program = function(program) {
 	}
 }
 
+optimisation.random_partition = function(total,n,min) {
+	var props = [];
+	var t = 0;
+	min = min || 1;
+
+	// generate n random numbers
+	for(var i=0;i<n;i++) {
+		var r = Math.random();
+		t += r;
+		props.push(r);
+	}
+
+	// scale so the allocations sum to total, but don't fill in the last item
+	var t2 = 0;
+	for(var i=0;i<n-1;i++) {
+		var p = Numbas.math.round(total*props[i]/t);
+		p = Math.max(p,min);  // allocate at least min
+		props[i] = p;
+		t2 += p;
+	}
+
+	// if the total excluding the last item is >= the total+min, need to subtract from preceding cells until we can allocate min to the last cell
+	if(min>0 && n>1 && t2>=total+min) {
+		if(n==2) {
+			props[0] -= min;
+			props[1] = min;
+			return props;
+		} else {
+			var j = n-2;
+			while(j>0 && t2>=total+min) {
+				var diff = t2-(total-min);
+				var c = Math.min(props[j]-min,diff);
+				props[j] -= c;
+				t2 -= c;
+				j -= 1;
+			}
+		}
+	}
+	props[n-1] = total - t2;
+	return props;
+}
+
+optimisation.utility_set = function(utility,labels) {
+	var maxx = 0, maxy = 0;
+	for(var i=0;i<utility.rows;i++) {
+		maxx = Math.max(utility[i][0],maxx);
+		maxy = Math.max(utility[i][1],maxy);
+	}
+
+	var scale_x = maxx/600;
+	var scale_y = maxy/400
+	var div = Numbas.extensions.jsxgraph.makeBoard('600px','400px',{
+		boundingBox:[-20*scale_x,maxy+50*scale_y,maxx+80*scale_x,-20*scale_y],
+		axis: true,
+	});
+	var board = div.board;
+
+	for(var i=0;i<utility.rows;i++) {
+		var pos = utility[i];
+		var line_options = {fixed: true, visible: false, dash:2, highlight: false, opacity: 1, color: '#888'};
+		var hline = board.create('line',[pos,[pos[0]+1,pos[1]]],line_options);
+		var vline = board.create('line',[pos,[pos[0],pos[1]+1]],line_options);
+		var p = board.create('point',utility[i], {fixed: true, highlight: false, name: labels[i]});
+
+		(function(p,hline,vline) {
+		 p.on('over',function() {
+			 hline.showElement();
+			 vline.showElement();
+			 board.update();
+			 });
+		 p.on('out',function() {
+			 hline.hideElement();
+			 vline.hideElement();
+			 board.update();
+			 });
+		 })(p,hline,vline);
+	}
+
+	return div;
+}
+
 	var jme = Numbas.jme;
 	var unwrapValue = jme.unwrapValue;
 	var funcObj = jme.funcObj;
@@ -1352,46 +1433,8 @@ optimisation.solve_linear_program = function(program) {
 	var TMatrix = types.TMatrix;
 	var TString = types.TString;
 
-	scope.addFunction(new funcObj('random_partition',[TNum,TNum],TList,function(total,n) {
-		var props = [];
-		var t = 0;
-
-		// generate n random numbers
-		for(var i=0;i<n;i++) {
-		  var r = Math.random();
-		  t += r;
-		  props.push(r);
-		}
-
-		// scale so the allocations sum to total, but don't fill in the last item
-		var t2 = 0;
-		for(var i=0;i<n-1;i++) {
-		  var p = Numbas.math.round(total*props[i]/t);
-		  p = Math.max(p,1);  // allocate at least 1
-		  props[i] = p;
-		  t2 += p;
-		}
-
-		// if the total excluding the last item is >= the total, need to subtract from preceding cells until we can allocate 1 to the last cell
-		if(n>1 && t2>=total) {
-		  var j = n-2;
-		  if(j==0) {
-			  props[0] -= 1;
-			  props[1] = 1;
-			  return props;
-		  } else {
-			  while(j>0 && t2>=total) {
-				var diff = t2-(total-1);
-				var c = Math.min(props[j]-1,diff);
-				props[j] -= c;
-				t2 -= c;
-				j -= 1;
-			  }
-		  }
-		}
-		props[n-1] = total - t2;
-		return props;
-	},{unwrapValues: true}));
+	scope.addFunction(new funcObj('random_partition',[TNum,TNum],TList,optimisation.random_partition,{unwrapValues: true}));
+	scope.addFunction(new funcObj('random_partition',[TNum,TNum,TNum],TList,optimisation.random_partition,{unwrapValues: true}));
 
 	scope.addFunction(new funcObj('best_point',[TList],TNum,function(program) {
 		var result = optimisation.solve_linear_program(program);
@@ -1506,5 +1549,9 @@ optimisation.solve_linear_program = function(program) {
 	scope.addFunction(new funcObj('hungarian_display',[TMatrix],THTML,function(costs) {
 		var res = optimisation.hungarian(costs);
 		return new THTML(optimisation.hungarian_display(res.frames));
+	},{unwrapValues: true}));
+
+	scope.addFunction(new funcObj('utility_set',[TMatrix,TList],THTML,function(utility,labels) {
+		return new THTML(optimisation.utility_set(utility,labels));
 	},{unwrapValues: true}));
 });
