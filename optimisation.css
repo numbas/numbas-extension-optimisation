@@ -34,7 +34,11 @@
 .optimisation-table.simplex .pivot-row .pivot-column {
 	font-weight: bold;
 }
-.optimisation-table.simplex td:last-child {
+.optimisation-table.simplex td.rhs {
+	border-left: 1px solid;
+}
+.optimisation-table.simplex td.ratio {
+	font-weight: bold;
 	border-left: 1px solid;
 }
 .optimisation-table.simplex .objective td {

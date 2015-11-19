@@ -798,8 +798,10 @@ optimisation.simplex = function(objective,equations) {
 		// find pivot row
 		var min_ratio = null;
 		var best = null;
+		var ratios = [];
 		for(var i=0;i<tableau.length;i++) {
 			var ratio = div(tableau[i][num_variables],tableau[i][pivot_column]);
+			ratios.push(ratio);
 			ratio = ratio[0]/ratio[1];
 			if(ratio>0 && (min_ratio===null || ratio<min_ratio)) {
 				min_ratio = ratio;
@@ -807,6 +809,8 @@ optimisation.simplex = function(objective,equations) {
 			}
 		}
 		var pivot_row = best;
+
+		frame({pivot_row: pivot_row, pivot_column: pivot_column, comment: "Pivot on column "+(pivot_column+1)+" and row "+(pivot_row+1)+".", ratios: ratios})
 
 		var pivot = tableau[pivot_row][pivot_column];
 		// make pivot row have a 1 in pivot column
@@ -823,22 +827,33 @@ optimisation.simplex = function(objective,equations) {
 			}
 		}
 
-		frame({pivot_row: pivot_row, pivot_column: pivot_column});
+		frame({comment: "Column "+(pivot_column+1)+" is now basic."});
 	}
+	frame({complete:true, comment: "No entry on the objective row is negative, so this tableau is optimal."});
 	var out = [];
 	for(var i=0;i<num_variables;i++) {
+		var one = null;
+		var zeros = true;
 		for(var j=0;j<tableau.length;j++) {
 			var t = tableau[j][i];
 			var n = t[0]/t[1];
-			if(n==1) {
-				var t = tableau[j][num_variables];
-				out[i] = t[0]/t[1];
+			if(one===null && n==1) {
+				one = j;
+				break;
+			} else if(n!=0) {
+				zeros = false;
 				break;
 			}
+		}
+		if(zeros && one!==null) {
+			var t = tableau[one][num_variables];
+			out[i] = t[0]/t[1];
+		} else {
 			out[i] = 0;
 		}
 	}
-	return {result: out, frames: frames};
+	var otableau = tableau.map(function(row) { return row.map(function(x){ return x[0]/x[1]; }) });
+	return {result: out, tableau: otableau, frames: frames};
 }
 
 function rationalNumber(f) {
@@ -856,28 +871,119 @@ function rationalNumber(f) {
 optimisation.simplex_display = function(frames) {
 	var div = $('<div class="optimisation-display"/>');
 	var frame_htmls = frames.map(function(frame) {
+		var frame_html = $('<div class="frame"/>');
+		div.append(frame_html);
 		var table = $('<table class="optimisation-table simplex"><thead></thead><tbody></tbody></table>');
-		div.append(table);
+		var tr = $('<tr/>');
+		for(var i=0;i<frame.tableau[0].length-1;i++) {
+			var th = $('<th/>').html('x<sub>'+(i+1)+'</sub>')
+			tr.append(th);
+		}
+		tr.append('<th class="objective">Quantity</th>');
+		if(frame.ratios) {
+			tr.append('<th class="ratio">Ratio</th>');
+		}
+		table.find('thead').append(tr);
+		frame_html.append(table);
 		frame.tableau.forEach(function(row,i) {
 			var tr = $('<tr/>');
-			if(i==frame.pivot_row) {
-				tr.addClass('pivot-row');
-			}
 			if(i==frame.tableau.length-1) {
 				tr.addClass('objective');
 			}
 			row.forEach(function(x,j) {
 				var td = $('<td/>').text(rationalNumber(x));
+				if(i==frame.pivot_row) {
+					td.addClass('pivot-row');
+				}
 				if(j==frame.pivot_column) {
 					td.addClass('pivot-column');
 				}
+				if(j==row.length-1) {
+					td.addClass('rhs');
+				} else if(frame.complete && x[0]==1 && x[1]==1) {
+					td.addClass('solution');
+				}
 				tr.append(td);
 			});
+			if(frame.ratios) {
+				var td = $('<td class="ratio"/>').text(rationalNumber(frame.ratios[i]));
+				if(i==frame.pivot_row) {
+					td.addClass('pivot-row');
+				}
+				tr.append(td);
+			}
 			table.find('tbody').append(tr);
 		});
+		if(frame.comment) {
+			frame_html.append($('<p/>').html(frame.comment));
+		}
 	});
 	return div;
 }
+
+/* Reduce a system of linear equations to row-echelon form
+ */
+optimisation.reduced_row_echelon_form = function(system) {
+	var matrix = Numbas.util.copyarray(system,true);
+	var rows = matrix.length;
+	var columns = matrix[0].length;
+
+	var current_row = 0;
+	// for each column, there should be at most one row with a 1 in that column, and every other row should have 0 in that column
+	for(var leader_column=0;leader_column<columns;leader_column++) {
+		// find the first row with a non-zero in that column
+		for(var row=current_row;row<rows;row++) {
+			if(matrix[row][leader_column]!=0) {
+				break;
+			}
+		}
+		// if we found a row with a non-zero in the leader column 
+		if(row<rows) {
+			// swap that row with the <leader_column>th one
+			if(row!=current_row) {
+				var tmp = matrix[row];
+				matrix[row] = matrix[current_row];
+				matrix[current_row] = tmp;
+			}
+
+			// multiply this row so the leader column has a 1 in it
+			matrix[current_row] = matrix[current_row].map(function(v){return v/matrix[current_row][leader_column]});
+
+			// subtract multiples of this row from every other row so they all have a 0 in this column
+			for(var row=0;row<rows;row++) {
+				if(row!=current_row) {
+					var original = matrix[row];
+					matrix[row] = matrix[row].map(function(v,i){ return v-matrix[current_row][i]*matrix[row][leader_column] });
+				}
+			}
+			current_row += 1;
+		}
+	}
+	
+	return matrix;
+}
+
+optimisation.systems_of_equations_equivalent = function(s1,s2) {
+	if(s1.length!=s2.length || s1[0].length!=s2[0].length) {
+		return false;
+	}
+	var r1 = optimisation.reduced_row_echelon_form(s1);
+	var r2 = optimisation.reduced_row_echelon_form(s2);
+	show(r1);
+	show(r2);
+
+	for(var i=0;i<r1.length;i++) {
+		for(var j=0;j<r1[i].length;j++) {
+			if(Math.abs(r1[i][j]-r2[i][j])>1e-10) {
+				console.log(i,j);
+				return false;
+			}
+		}
+	}
+
+	return true;
+}
+
 
 optimisation.job_cost_table = function(costs,worker_name,job_name) {
 	var num_workers = costs.rows;
@@ -1686,4 +1792,17 @@ optimisation.evpi = function(utility,probabilities) {
 
 	scope.addFunction(new funcObj('evpi',[TMatrix,TList],TNum,optimisation.evpi,{unwrapValues: true}));
 	scope.addFunction(new funcObj('evpi',[TMatrix,TVector],TNum,optimisation.evpi,{unwrapValues: true}));
+
+	scope.addFunction(new funcObj('simplex',[TList,TList],TList,function(objective,equations) {
+		var res = optimisation.simplex(objective,equations);
+		return res.result;
+	},{unwrapValues: true}));
+	scope.addFunction(new funcObj('simplex_optimal_tableau',[TList,TList],TMatrix,function(objective,equations) {
+		var res = optimisation.simplex(objective,equations);
+		return new TMatrix(res.tableau);
+	},{unwrapValues: true}));
+	scope.addFunction(new funcObj('simplex_display',[TList,TList],THTML,function(objective,equations) {
+		var res = optimisation.simplex(objective,equations);
+		return new THTML(optimisation.simplex_display(res.frames));
+	},{unwrapValues: true}));
 });
