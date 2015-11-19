@@ -37,23 +37,26 @@
 				}
 
 				var result = optimisation.nw_corner([359,476,435],[481,436,150]);
-				$('body').append('<h1>NW corner</h1>');
+				$('body').append('<h1 id="nwcorner">NW corner</h1>');
 				$('body').append(optimisation.nw_corner_display(result.frames));
 				var result = optimisation.minimum_cost([610,341,281],[325,449,458],matrix([[1,1,1],[1,1,1],[1,1,1]]));
-				$('body').append('<h1>Minimum cost</h1>');
+				$('body').append('<h1 id="mincost">Minimum cost</h1>');
 				$('body').append(optimisation.minimum_cost_display(result.frames));
 
-				$('body').append('<h1>Simplex</h1>');
+				$('body').append('<h1 id="simplex">Simplex</h1>');
 				var result = optimisation.simplex([1,1,0,0],[[2,1,1,0,4],[1,2,0,1,3]]);
 				$('body').append(optimisation.simplex_display(result.frames));
+				var result = optimisation.simplex([5,7,0,0,0,0,0,0],[[2,3,1,0,0,0,0,0,240],[1,1,0,1,0,0,0,0,100],[-1,0,0,0,1,0,0,0,-30],[0,-1,0,0,0,1,0,0,-20],[-2,-5,0,0,0,0,1,0,-200],[1,-3,0,0,0,0,0,1,0]]);
+				$('body').append(optimisation.simplex_display(result.frames));
+				console.log(result);
 
-				$('body').append('<h1>Hungarian</h1>');
+				$('body').append('<h1 id="hungarian">Hungarian</h1>');
 				var result = optimisation.hungarian([[1,2,3],[2,4,6],[3,6,9]]);
 				$('body').append(optimisation.hungarian_display(result.frames));
 				var result = optimisation.hungarian([[1,2,3,4,5],[2,4,6,3,2],[3,6,9,6,3],[4,6,3,2,6],[4,7,4,8,2]]);
 				$('body').append(optimisation.hungarian_display(result.frames));
 
-				$('body').append('<h1>Stepping stone</h1>');
+				$('body').append('<h1 id="steppingstone">Stepping stone</h1>');
 				var assignments = matrix([[0,0,20,0],[17,0,0,21],[0,3,1,0]]);
 				var costs = matrix([[8,4,1,5],[7,2,8,9],[5,2,4,9]]);
 				var res = optimisation.stepping_stone(assignments,costs);
@@ -85,28 +88,6 @@
 					var res = optimisation.stepping_stone(assignments,costs);
 					$('body').append(optimisation.stepping_stone_display(res.frames));
 				} catch(e) {
-				}
-
-				console.clear();
-
-				var a = matrix([[0,0,0,0],[0,0,0,0],[0,0,0,0]]);
-				var al = [[true,true,true,true],[true,true,false,false],[false,false,false,false]];
-				var c = matrix([[1,2,3,4],[2,3,4,1],[3,4,1,2],[4,3,2,1]]);
-				console.log(optimisation.assignment_is_optimal(a,al,c));
-
-				console.clear();
-
-				var c = matrix([[1,6,6,5],[9,4,1,2],[8,5,2,1],[1,8,2,5]]);
-				try{
-					optimisation.hungarian_phil(c);
-				} catch(e) {
-					console.log(e);
-				}
-				var c = matrix([[6,2,6,9],[3,7,8,5],[4,8,4,9],[2,7,6,1]]);
-				try{
-					optimisation.hungarian_phil(c);
-				} catch(e) {
-					console.log(e);
 				}
 			});
 		</script>

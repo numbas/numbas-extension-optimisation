@@ -715,22 +715,70 @@ optimisation.simplex = function(objective,equations) {
 		frames.push(makeFrame(data,extra));
 	}
 
+	var num_equations = equations.length;
+	var tableau = Numbas.util.copyarray(equations,true);
+
 	var num_variables = objective.length;
 	objective = objective.map(function(x){return -x});
 	objective.push(0);
-	var tableau = equations.slice();
-	tableau.splice(0,0,objective);
+	tableau.push(objective);
+
+	tableau = tableau.map(function(row) {
+		return row.map(function(v) {
+			return Numbas.math.rationalApproximation(v)
+		});
+	});
+
+	function mul(a,b) {
+		var x = a[0]*b[0];
+		var y = a[1]*b[1];
+		var g = Numbas.math.gcd(x,y);
+		if(x==0) {
+			return [0,1];
+		}
+		if(y<0) {
+			g = -g;
+		}
+		return [x/g,y/g];
+	}
+	function div(a,b) {
+		var x = a[0]*b[1];
+		var y = a[1]*b[0];
+		var g = Numbas.math.gcd(x,y);
+		if(x==0) {
+			return [0,1];
+		}
+		if(y<0) {
+			g = -g;
+		}
+		return [x/g,y/g];
+	}
+	function sub(a,b) {
+		var x = a[0]*b[1]-b[0]*a[1];
+		var y = a[1]*b[1];
+		var g = Numbas.math.gcd(x,y);
+		if(x==0) {
+			return [0,1];
+		}
+		if(y<0) {
+			g = -g;
+		}
+		return [x/g,y/g];
+	}
 
 	frame();
 
 	var steps = 0;
 	while(steps<1000) {
 		steps += 1;
+		if(steps==1000) {
+			throw(new Error("Simplex algorithm took too many steps"));
+		}
 		// if all coefficients in the top row are nonnegative, solution is optimal
 		// otherwise, pick a column with negative value as the pivot
 		var pivot_column = null;
-		for(var i=0;i<tableau[0].length;i++) {
-			if(tableau[0][i]<0) {
+		for(var i=0;i<tableau[num_equations].length;i++) {
+			if(tableau[num_equations][i][0]<0) {
 				pivot_column = i;
 				break;
 			}
@@ -741,7 +789,7 @@ optimisation.simplex = function(objective,equations) {
 
 		// find pivot column
 		for(var i=0;i<num_variables;i++) {
-			if(tableau[0][i]<0) {
+			if(tableau[num_equations][i][0]<0) {
 				break;
 			}
 		}
@@ -751,7 +799,8 @@ optimisation.simplex = function(objective,equations) {
 		var min_ratio = null;
 		var best = null;
 		for(var i=0;i<tableau.length;i++) {
-			var ratio = tableau[i][num_variables]/tableau[i][pivot_column];
+			var ratio = div(tableau[i][num_variables],tableau[i][pivot_column]);
+			ratio = ratio[0]/ratio[1];
 			if(ratio>0 && (min_ratio===null || ratio<min_ratio)) {
 				min_ratio = ratio;
 				best = i;
@@ -760,14 +809,16 @@ optimisation.simplex = function(objective,equations) {
 		var pivot_row = best;
 
 		var pivot = tableau[pivot_row][pivot_column];
+		// make pivot row have a 1 in pivot column
 		for(var i=0;i<=num_variables;i++) {
-			tableau[pivot_row][i] /= pivot;
+			tableau[pivot_row][i] = div(tableau[pivot_row][i],pivot);
 		}
+		// make all other rows have a 0 in pivot column
 		for(var i=0;i<tableau.length;i++) {
 			if(i!=pivot_row) {
 				var f = tableau[i][pivot_column];
 				for(var j=0;j<=num_variables;j++) {
-					tableau[i][j] -= f*tableau[pivot_row][j];
+					tableau[i][j] = sub(tableau[i][j],mul(f,tableau[pivot_row][j]));
 				}
 			}
 		}
@@ -777,8 +828,11 @@ optimisation.simplex = function(objective,equations) {
 	var out = [];
 	for(var i=0;i<num_variables;i++) {
 		for(var j=0;j<tableau.length;j++) {
-			if(tableau[j][i]==1) {
-				out[i] = tableau[j][num_variables];
+			var t = tableau[j][i];
+			var n = t[0]/t[1];
+			if(n==1) {
+				var t = tableau[j][num_variables];
+				out[i] = t[0]/t[1];
 				break;
 			}
 			out[i] = 0;
@@ -787,14 +841,13 @@ optimisation.simplex = function(objective,equations) {
 	return {result: out, frames: frames};
 }
 
-function rationalNumber(n) {
+function rationalNumber(f) {
 	var out;
-	var f = Numbas.math.rationalApproximation(Math.abs(n));
 	if(f[1]==1)
 		out = Math.abs(f[0]).toString();
 	else
-		out = f[0]+'/'+f[1];
-	if(n<0)
+		out = Math.abs(f[0])+'/'+f[1];
+	if(f[0]<0)
 		out='-'+out;
 
 	return out;
@@ -809,6 +862,9 @@ optimisation.simplex_display = function(frames) {
 			var tr = $('<tr/>');
 			if(i==frame.pivot_row) {
 				tr.addClass('pivot-row');
+			}
+			if(i==frame.tableau.length-1) {
+				tr.addClass('objective');
 			}
 			row.forEach(function(x,j) {
 				var td = $('<td/>').text(rationalNumber(x));

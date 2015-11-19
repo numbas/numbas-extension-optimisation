@@ -37,6 +37,9 @@
 .optimisation-table.simplex td:last-child {
 	border-left: 1px solid;
 }
+.optimisation-table.simplex .objective td {
+	border-top: 1px solid;
+}
 
 .optimisation-table.hungarian {
     position: relative;
