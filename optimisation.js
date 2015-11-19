@@ -1477,6 +1477,74 @@ optimisation.utility_set = function(utility,labels) {
 	return div;
 }
 
+optimisation.show_expected_value_criteria = function(utility,labels,prob_state_1,prob_state_2) {
+	var maxx = 0, maxy = 0;
+	for(var i=0;i<utility.rows;i++) {
+		maxx = Math.max(utility[i][0],maxx);
+		maxy = Math.max(utility[i][1],maxy);
+	}
+
+	var scale_x = maxx/600;
+	var scale_y = maxy/400
+	var div = Numbas.extensions.jsxgraph.makeBoard('600px','400px',{
+		boundingBox:[-20*scale_x,maxy+50*scale_y,maxx+80*scale_x,-20*scale_y],
+		axis: true,
+	});
+	var board = div.board;
+
+	var max_utility = 0;
+	for(var i=0;i<utility.rows;i++) {
+		var pos = utility[i];
+		var line_options = {fixed: true, visible: false, dash:2, highlight: false, opacity: 1, color: '#888'};
+		var hline = board.create('line',[pos,[pos[0]+1,pos[1]]],line_options);
+		var vline = board.create('line',[pos,[pos[0],pos[1]+1]],line_options);
+		var p = board.create('point',utility[i], {fixed: true, highlight: false, name: labels[i]});
+		var u = prob_state_1*pos[0] + prob_state_2*pos[1];
+		max_utility = Math.max(max_utility,u);
+
+		(function(p,hline,vline) {
+		 p.on('over',function() {
+			 hline.showElement();
+			 vline.showElement();
+			 board.update();
+			 });
+		 p.on('out',function() {
+			 hline.hideElement();
+			 vline.hideElement();
+			 board.update();
+			 });
+		 })(p,hline,vline);
+	}
+
+	board.create('line',[-max_utility,prob_state_1,prob_state_2], {dash: 2});
+
+	return div;
+}
+
+optimisation.evpi = function(utility,probabilities) {
+	var num_states = utility.columns;
+	var num_actions = utility.rows;
+	var total_over_states = 0;
+	for(var j=0;j<num_states;j++) {
+		var m = 0;
+		for(var i=0;i<num_actions;i++) {
+			m = Math.max(utility[i][j],m);
+		}
+		total_over_states += probabilities[j]*m;
+	}
+
+	var max_over_actions = 0;
+	for(var i=0;i<num_actions;i++) {
+		var t = 0;
+		for(var j=0;j<num_states;j++) {
+			t += probabilities[j]*utility[i][j];
+		}
+		max_over_actions = Math.max(max_over_actions,t);
+	}
+
+	return total_over_states - max_over_actions;
+}
+
 	var jme = Numbas.jme;
 	var unwrapValue = jme.unwrapValue;
 	var funcObj = jme.funcObj;
@@ -1488,6 +1556,7 @@ optimisation.utility_set = function(utility,labels) {
 	var TBool = types.TBool;
 	var TMatrix = types.TMatrix;
 	var TString = types.TString;
+	var TVector = types.TVector;
 
 	scope.addFunction(new funcObj('random_partition',[TNum,TNum],TList,optimisation.random_partition,{unwrapValues: true}));
 	scope.addFunction(new funcObj('random_partition',[TNum,TNum,TNum],TList,optimisation.random_partition,{unwrapValues: true}));
@@ -1610,4 +1679,11 @@ optimisation.utility_set = function(utility,labels) {
 	scope.addFunction(new funcObj('utility_set',[TMatrix,TList],THTML,function(utility,labels) {
 		return new THTML(optimisation.utility_set(utility,labels));
 	},{unwrapValues: true}));
+
+	scope.addFunction(new funcObj('show_expected_value_criteria',[TMatrix,TList,TNum,TNum],THTML,function(utility,labels,prob_state_1,prob_state_2) {
+		return new THTML(optimisation.show_expected_value_criteria(utility,labels,prob_state_1,prob_state_2));
+	},{unwrapValues: true}));
+
+	scope.addFunction(new funcObj('evpi',[TMatrix,TList],TNum,optimisation.evpi,{unwrapValues: true}));
+	scope.addFunction(new funcObj('evpi',[TMatrix,TVector],TNum,optimisation.evpi,{unwrapValues: true}));
 });
