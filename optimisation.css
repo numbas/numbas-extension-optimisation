@@ -1,5 +1,5 @@
 .optimisation-display .frame {
-	margin-bottom: 2em;
+	margin-bottom: 1em;
 }
 
 .optimisation-table .changed {
@@ -25,6 +25,20 @@
 	border-top: 1px solid;
 }
 
+
+.optimisation-table.simplex {
+	margin 3em auto;
+}
+
+.optimisation-table.simplex thead tr:first-child td {
+    border-top: 1px solid;
+}
+
+.optimisation-table.simplex thead tr:last-child th {
+    border-bottom: 1px solid;
+    background: white !important;
+}
+
 .optimisation-table.simplex .pivot-row {
 	background: #eee !important;
 }
@@ -34,8 +48,11 @@
 .optimisation-table.simplex .pivot-row .pivot-column {
 	font-weight: bold;
 }
-.optimisation-table.simplex td.rhs {
-	border-left: 1px solid;
+.optimisation-table.simplex .rhs {
+	padding-right: 1em;
+}
+.optimisation-table.simplex .basics {
+	padding-left: 1em;
 }
 .optimisation-table.simplex td.ratio {
 	font-weight: bold;
@@ -44,6 +61,7 @@
 .optimisation-table.simplex .objective td {
 	border-top: 1px solid;
 }
+
 
 .optimisation-table.hungarian {
     position: relative;

@@ -704,13 +704,53 @@ optimisation.show_cost_calculation = function(assignments,costs) {
 	return s;
 }
 
-optimisation.simplex = function(objective,equations) {
+/* Rational arithmetic functions */
+function rmul(a,b) {
+	var x = a[0]*b[0];
+	var y = a[1]*b[1];
+	var g = Numbas.math.gcd(x,y);
+	if(x==0) {
+		return [0,1];
+	}
+	if(y<0) {
+		g = -g;
+	}
+	return [x/g,y/g];
+}
+function rdiv(a,b) {
+	var x = a[0]*b[1];
+	var y = a[1]*b[0];
+	var g = Numbas.math.gcd(x,y);
+	if(x==0) {
+		return [0,1];
+	}
+	if(y<0) {
+		g = -g;
+	}
+	return [x/g,y/g];
+}
+function rsub(a,b) {
+	var x = a[0]*b[1]-b[0]*a[1];
+	var y = a[1]*b[1];
+	var g = Numbas.math.gcd(x,y);
+	if(x==0) {
+		return [0,1];
+	}
+	if(y<0) {
+		g = -g;
+	}
+	return [x/g,y/g];
+}
+
+optimisation.simplex = function(objective,equations,num_variables) {
 
 	var frames = [];
 	function frame(extra) {
 		var data = {
 			tableau: tableau,
-			objective: objective
+			objective: rational_objective,
+			basics: optimisation.simplex_find_basics(tableau),
+			variable_names: variable_names
 		}
 		frames.push(makeFrame(data,extra));
 	}
@@ -718,53 +758,29 @@ optimisation.simplex = function(objective,equations) {
 	var num_equations = equations.length;
 	var tableau = Numbas.util.copyarray(equations,true);
 
+	var num_real = 1;
+	var num_slack = 1;
+	var variable_names = objective.map(function(q) {
+		if(q!=0) {
+			return 'x_'+(num_real++);
+		} else {
+			return 's_'+(num_slack++);
+		}
+	});
+
 	var num_variables = objective.length;
-	objective = objective.map(function(x){return -x});
-	objective.push(0);
-	tableau.push(objective);
+	var t_objective = objective.map(function(x){return -x});
+	t_objective.push(0);
+	tableau.push(t_objective);
+	var rational_objective = objective.map(function(v){
+		return Numbas.math.rationalApproximation(v); 
+	});
 
 	tableau = tableau.map(function(row) {
 		return row.map(function(v) {
 			return Numbas.math.rationalApproximation(v)
 		});
 	});
-
-	function mul(a,b) {
-		var x = a[0]*b[0];
-		var y = a[1]*b[1];
-		var g = Numbas.math.gcd(x,y);
-		if(x==0) {
-			return [0,1];
-		}
-		if(y<0) {
-			g = -g;
-		}
-		return [x/g,y/g];
-	}
-	function div(a,b) {
-		var x = a[0]*b[1];
-		var y = a[1]*b[0];
-		var g = Numbas.math.gcd(x,y);
-		if(x==0) {
-			return [0,1];
-		}
-		if(y<0) {
-			g = -g;
-		}
-		return [x/g,y/g];
-	}
-	function sub(a,b) {
-		var x = a[0]*b[1]-b[0]*a[1];
-		var y = a[1]*b[1];
-		var g = Numbas.math.gcd(x,y);
-		if(x==0) {
-			return [0,1];
-		}
-		if(y<0) {
-			g = -g;
-		}
-		return [x/g,y/g];
-	}
 
 	frame();
 
@@ -800,7 +816,7 @@ optimisation.simplex = function(objective,equations) {
 		var best = null;
 		var ratios = [];
 		for(var i=0;i<tableau.length;i++) {
-			var ratio = div(tableau[i][num_variables],tableau[i][pivot_column]);
+			var ratio = rdiv(tableau[i][num_variables],tableau[i][pivot_column]);
 			ratios.push(ratio);
 			ratio = ratio[0]/ratio[1];
 			if(ratio>0 && (min_ratio===null || ratio<min_ratio)) {
@@ -810,58 +826,69 @@ optimisation.simplex = function(objective,equations) {
 		}
 		var pivot_row = best;
 
-		frame({pivot_row: pivot_row, pivot_column: pivot_column, comment: "Pivot on column "+(pivot_column+1)+" and row "+(pivot_row+1)+".", ratios: ratios})
+		frame({pivot_row: pivot_row, pivot_column: pivot_column, comment: "Pivot on $"+variable_names[pivot_column]+"$ and row "+(pivot_row+1)+".", ratios: ratios})
 
 		var pivot = tableau[pivot_row][pivot_column];
 		// make pivot row have a 1 in pivot column
 		for(var i=0;i<=num_variables;i++) {
-			tableau[pivot_row][i] = div(tableau[pivot_row][i],pivot);
+			tableau[pivot_row][i] = rdiv(tableau[pivot_row][i],pivot);
 		}
 		// make all other rows have a 0 in pivot column
 		for(var i=0;i<tableau.length;i++) {
 			if(i!=pivot_row) {
 				var f = tableau[i][pivot_column];
 				for(var j=0;j<=num_variables;j++) {
-					tableau[i][j] = sub(tableau[i][j],mul(f,tableau[pivot_row][j]));
+					tableau[i][j] = rsub(tableau[i][j],rmul(f,tableau[pivot_row][j]));
 				}
 			}
 		}
 
-		frame({comment: "Column "+(pivot_column+1)+" is now basic."});
+		frame({comment: "$"+(variable_names[pivot_column])+"$ is now basic."});
 	}
-	frame({complete:true, comment: "No entry on the objective row is negative, so this tableau is optimal."});
-	var out = [];
+	frame({complete:true, comment: "No $c_j - z_j$ is positive, so this tableau is optimal."});
+	var basics = optimisation.simplex_find_basics(tableau);
+	var out = basics.map(function(basic,i) {
+		if(basic>=0) {
+			var t = tableau[basic][num_variables];
+			return t[0]/t[1];
+		} else {
+			return 0;
+		}
+	});
+	var otableau = tableau.map(function(row) { return row.map(function(x){ return x[0]/x[1]; }) });
+	return {result: out, basics: basics, tableau: otableau, frames: frames};
+}
+
+optimisation.simplex_find_basics = function(tableau) {
+	var num_variables = tableau[0].length;
+	var basics = [];
 	for(var i=0;i<num_variables;i++) {
 		var one = null;
 		var zeros = true;
 		for(var j=0;j<tableau.length;j++) {
 			var t = tableau[j][i];
-			var n = t[0]/t[1];
+			var n = typeof(t)=='number' ? t : t[0]/t[1];
 			if(one===null && n==1) {
 				one = j;
-				break;
 			} else if(n!=0) {
 				zeros = false;
 				break;
 			}
 		}
-		if(zeros && one!==null) {
-			var t = tableau[one][num_variables];
-			out[i] = t[0]/t[1];
-		} else {
-			out[i] = 0;
-		}
+		basics[i] = zeros && one!==null ? one : -1;
 	}
-	var otableau = tableau.map(function(row) { return row.map(function(x){ return x[0]/x[1]; }) });
-	return {result: out, tableau: otableau, frames: frames};
+	return basics;
 }
 
 function rationalNumber(f) {
 	var out;
-	if(f[1]==1)
+	if(f[1]==0) {
+		return 'N/A';
+	} else if(f[1]==1) {
 		out = Math.abs(f[0]).toString();
-	else
+	} else {
 		out = Math.abs(f[0])+'/'+f[1];
+	}
 	if(f[0]<0)
 		out='-'+out;
 
@@ -873,52 +900,104 @@ optimisation.simplex_display = function(frames) {
 	var frame_htmls = frames.map(function(frame) {
 		var frame_html = $('<div class="frame"/>');
 		div.append(frame_html);
-		var table = $('<table class="optimisation-table simplex"><thead></thead><tbody></tbody></table>');
-		var tr = $('<tr/>');
-		for(var i=0;i<frame.tableau[0].length-1;i++) {
-			var th = $('<th/>').html('x<sub>'+(i+1)+'</sub>')
-			tr.append(th);
-		}
-		tr.append('<th class="objective">Quantity</th>');
-		if(frame.ratios) {
-			tr.append('<th class="ratio">Ratio</th>');
-		}
-		table.find('thead').append(tr);
+
+		var table = optimisation.simplex_display_tableau(frame);
 		frame_html.append(table);
-		frame.tableau.forEach(function(row,i) {
-			var tr = $('<tr/>');
-			if(i==frame.tableau.length-1) {
-				tr.addClass('objective');
-			}
-			row.forEach(function(x,j) {
-				var td = $('<td/>').text(rationalNumber(x));
-				if(i==frame.pivot_row) {
-					td.addClass('pivot-row');
-				}
-				if(j==frame.pivot_column) {
-					td.addClass('pivot-column');
-				}
-				if(j==row.length-1) {
-					td.addClass('rhs');
-				} else if(frame.complete && x[0]==1 && x[1]==1) {
-					td.addClass('solution');
-				}
-				tr.append(td);
-			});
-			if(frame.ratios) {
-				var td = $('<td class="ratio"/>').text(rationalNumber(frame.ratios[i]));
-				if(i==frame.pivot_row) {
-					td.addClass('pivot-row');
-				}
-				tr.append(td);
-			}
-			table.find('tbody').append(tr);
-		});
+
 		if(frame.comment) {
 			frame_html.append($('<p/>').html(frame.comment));
 		}
 	});
 	return div;
+}
+
+optimisation.simplex_display_tableau = function(frame) {
+	var table = $('<table class="optimisation-table simplex"><thead></thead><tbody></tbody></table>');
+	var tr = $('<tr/>');
+	tr.append('<td colspan="3"/>');
+	frame.objective.map(function(v) {
+		tr.append($('<td/>').text(rationalNumber(v)));
+	});
+	table.find('thead').append(tr);
+	var tr = $('<tr/>');
+	tr.append('<th>$c_j$</th>');
+	tr.append('<th class="basics">Basic variables</th>');
+	tr.append('<th class="rhs">Quantity</th>');
+	for(var i=0;i<frame.tableau[0].length-1;i++) {
+		var th = $('<th/>').html('$'+frame.variable_names[i]+'$')
+		tr.append(th);
+	}
+	if(frame.ratios) {
+		tr.append('<th class="ratio">Ratio</th>');
+	}
+	table.find('thead').append(tr);
+	frame.tableau.forEach(function(row,i) {
+		var is_objective = i==frame.tableau.length-1;
+		var tr = $('<tr/>');
+		var basics = [];
+		frame.basics.forEach(function(b,j) {
+			if(b==i) {
+				basics.push(j);
+			}
+		});
+		var td_cj = $('<td class="cj"/>');
+		tr.append(td_cj);
+		var td_values = $('<td class="basics"/>');
+		tr.append(td_values);
+		if(!is_objective) {
+			td_values.html('$'+basics.map(function(x){return frame.variable_names[x]}).join(',')+'$')
+			td_cj.html(basics.map(function(x){return rationalNumber(frame.objective[x])}).join(','));
+		} else {
+			td_values.html('$c_j - z_j$');
+		}
+
+		var td_rhs = $('<td class="rhs">');
+		tr.append(td_rhs);
+		if(!is_objective) {
+			td_rhs.text(rationalNumber(row[row.length-1]));
+		}
+
+		function show_value(x,j) {
+			var td = $('<td/>');
+			if(!is_objective) {
+				td.text(rationalNumber(x));
+			} else {
+				td.text(rationalNumber([-x[0],x[1]]));
+			}
+			if(i==frame.pivot_row) {
+				td.addClass('pivot-row');
+			}
+			if(j==frame.pivot_column) {
+				td.addClass('pivot-column');
+			}
+			if(frame.complete && x[0]==1 && x[1]==1) {
+				td.addClass('solution');
+			}
+			tr.append(td);
+		}
+		row.slice(0,row.length-1).forEach(show_value);
+		if(frame.ratios && !is_objective) {
+			var td = $('<td class="ratio"/>').text(rationalNumber(frame.ratios[i]));
+			if(i==frame.pivot_row) {
+				td.addClass('pivot-row');
+			}
+			tr.append(td);
+		}
+		table.find('tbody').append(tr);
+
+		if(is_objective) {
+			var z = row.slice(0,row.length-1).map(function(v,j) {
+				return rsub(rsub([0,1],frame.objective[j]),v);
+			});
+			var otr = tr;
+			var tr = $('<tr class="objective"><td class="cj"></td><td class="basics">$z_j$</td></tr>');
+			tr.append($('<td class="rhs">').text(rationalNumber(row[row.length-1])));
+			z.forEach(show_value);
+			otr.before(tr);
+		}
+	});
+
+	return table;
 }
 
 /* Reduce a system of linear equations to row-echelon form
@@ -984,6 +1063,59 @@ optimisation.systems_of_equations_equivalent = function(s1,s2) {
 	return true;
 }
 
+optimisation.convex_hull = function(points) {
+  var min_x = Infinity;
+  var max_x = -Infinity;
+  var left,right;
+  points.forEach(function(p){ 
+    if(p[0]<min_x) {
+      min_x = p[0];
+      left = p;
+    }
+    if(p[0]>max_x) {
+      max_x = p[0];
+      right = p;
+    }
+  })
+  var above = convex_hull_line(left,right,points);
+  var below = convex_hull_line(right,left,points)
+  return [left].concat(above,[right],below);
+}
+function convex_hull_line(left,right,points) {
+  var dx = right[0]-left[0];
+  var dy = right[1]-left[1];
+  var m = -dy/dx;
+  
+  var max_d = -Infinity;
+  var top = null;
+  var above = [];
+  var below = [];
+  points.forEach(function(p) {
+    var d = -dy*(p[0]-left[0])+dx*(p[1]-left[1]);
+    if(d>0) {
+      above.push(p);
+      if(d>max_d) {
+        max_d = d
+        top = p;
+      }
+    }
+    if(d<0) {
+      below.push(p);
+    }
+  })
+  
+  if(top==right) {
+    throw(new Error("Eep"));
+  }
+  
+  if(top) {
+    var lt = convex_hull_line(left,top,above);
+    var tr = convex_hull_line(top,right,above);
+    return lt.concat([top],tr);
+  } else {
+    return [];
+  }
+}
 
 optimisation.job_cost_table = function(costs,worker_name,job_name) {
 	var num_workers = costs.rows;
@@ -1801,8 +1933,21 @@ optimisation.evpi = function(utility,probabilities) {
 		var res = optimisation.simplex(objective,equations);
 		return new TMatrix(res.tableau);
 	},{unwrapValues: true}));
+	scope.addFunction(new funcObj('simplex_find_basics',[TMatrix],TList,function(tableau) {
+		return optimisation.simplex_find_basics(tableau)
+	},{unwrapValues: true}));
 	scope.addFunction(new funcObj('simplex_display',[TList,TList],THTML,function(objective,equations) {
 		var res = optimisation.simplex(objective,equations);
 		return new THTML(optimisation.simplex_display(res.frames));
+	},{unwrapValues: true}));
+
+	scope.addFunction(new funcObj('simplex_final_tableau',[TList,TList],THTML,function(objective,equations) {
+		var res = optimisation.simplex(objective,equations);
+		var html = optimisation.simplex_display_tableau(res.frames[res.frames.length-1]);
+		return new THTML(html);
+	},{unwrapValues: true}));
+
+	scope.addFunction(new funcObj('convex_hull',[TList],TList,function(points) {
+		return optimisation.convex_hull(points);
 	},{unwrapValues: true}));
 });
