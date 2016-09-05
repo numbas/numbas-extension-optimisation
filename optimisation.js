@@ -856,6 +856,10 @@ optimisation.simplex = function(objective,equations,num_variables) {
 		}
 	});
 	var otableau = tableau.map(function(row) { return row.map(function(x){ return x[0]/x[1]; }) });
+    otableau.rows = otableau.length;
+    if(otableau.rows) {
+        otableau.columns = otableau[0].length;
+    }
 	return {result: out, basics: basics, tableau: otableau, frames: frames};
 }
 
