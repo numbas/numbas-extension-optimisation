@@ -276,6 +276,10 @@ optimisation.assignment_is_optimal = function(assignments,allocated,costs) {
 			var res = optimisation.shadow_costs(assignments,allocated,costs);
 		} catch(e) {
 			variation += 1;
+            if(variation>500) {
+                // tried too many variations - assume the assignment doesn't work in some way
+                return false;
+            }
 			for(var i=0;i<num_rows;i++) {
 				for(var j=0;j<num_columns;j++) {
 					if(assignments[i][j]==0) {
@@ -317,7 +321,7 @@ optimisation.assignment_is_valid = function(assignments,supplies,demands) {
 		for(var i=0;i<num_rows;i++) {
 			t += assignments[i][j];
 		}
-		if(t>demands[j]) {
+		if(t!=demands[j]) {
 			return false;
 		}
 	}
@@ -424,6 +428,7 @@ optimisation.allocations = function(assignments,allocated,variation) {
 
 	var num_allocated = 0;
 	if(allocated===undefined) {
+        // create an initial allocation - allocate all positive spaces
 		var allocated = assignments.map(function(row,i) {
 			return row.map(function(v,j) {
 				if(v>0) {
@@ -435,6 +440,7 @@ optimisation.allocations = function(assignments,allocated,variation) {
 			});
 		});
 	} else {
+        // if given an allocation, count the number of allocated spaces
 		allocated = Numbas.util.copyarray(allocated,true);
 		for(var i=0;i<num_rows;i++) {
 			for(var j=0;j<num_columns;j++) {
@@ -458,7 +464,12 @@ optimisation.allocations = function(assignments,allocated,variation) {
 			allocated[zero[0]][zero[1]] = true;
 		}
 	}
+
+    // we need rows+columns-1 allocations. If there are fewer, allocate some zero cells
 	var slack = num_rows + num_columns - 1 - num_allocated;
+    if(slack<0) {
+        throw(new Error("oops"));
+    }
 	if(slack>0) {
 		allocate_zeros(slack);
 	}
@@ -1107,7 +1118,6 @@ optimisation.systems_of_equations_equivalent = function(s1,s2) {
 	for(var i=0;i<r1.length;i++) {
 		for(var j=0;j<r1[i].length;j++) {
 			if(Math.abs(r1[i][j]-r2[i][j])>1e-10) {
-				console.log(i,j);
 				return false;
 			}
 		}
