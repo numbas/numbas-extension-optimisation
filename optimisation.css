@@ -108,6 +108,10 @@
 	text-decoration: line-through;
 }
 
+.optimisation-table.stepping-stone thead th {
+    background: none !important;
+}
+
 .optimisation-table.stepping-stone .cell {
 	border: 1px solid gray;
 }
@@ -125,6 +129,8 @@
 }
 .optimisation-table.stepping-stone .assignment {
 	margin: 0 1em;
+    display: inline-block;
+    min-width: 1em;
 }
 .optimisation-table.stepping-stone .path {
 	background: #ccc !important;

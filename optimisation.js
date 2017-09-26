@@ -492,6 +492,15 @@ optimisation.stepping_stone = function(assignments,costs) {
 	var seen = [];
 	var states = [];
 	while(!optimisation.assignment_is_optimal(assignments,allocated,costs)) {
+        frame({
+            comment: "Compute the shadow costs $u_i$ and $v_j$ so that $c_{ij} = u_i + v_j$. Set $u_1=0$, and then solve the remaining equations for the cells with allocation.",
+            show_shadow_costs: true
+        });
+        frame({
+            comment: "For each cell without an allocation, compute $\\Delta_{ij} = c_{ij}-u_i-v_j$. This is shown in the top-left of each cell in the table below.",
+            show_shadow_costs: true,
+            show_deltas: true
+        });
 		steps += 1;
 		if(steps>120) {
 			throw(new Error("Too many steps in stepping stone"));
@@ -517,13 +526,34 @@ optimisation.stepping_stone = function(assignments,costs) {
 			allocated = optimisation.allocations(assignments,allocated,variation);
 			res = optimisation.stepping_stone_loop(assignments,allocated,costs);
 		}
-		frame({
-			path: res.path,
-			change: res.minimum_change
-		});
+        if(!res.minimum_change) {
+            break;
+        }
+        frame({
+            comment: "The lowest $\\Delta_{ij}$ is $"+res.minimum_change+"$, so this solution is not optimal.",
+            show_shadow_costs: true,
+            show_deltas: true
+        });
+        frame({
+            comment: "Assign as much as possible to the cell with the most negative $\\Delta_{ij}$. This involves moving units around in a loop consisting of the cells highlighted below.",
+            path: res.path,
+            show_shadow_costs: true,
+            show_deltas: true
+        });
+        var path = res.path;
 		var res = optimisation.apply_stepping_stone_loop(assignments,allocated,res.path,res.minimum_change);
 		assignments = res.assignments;
 		allocated = res.allocated;
+
+        frame({
+            path: path,
+            show_shadow_costs: true,
+            show_deltas: true
+        });
+        frame({
+            comment: "The assignment now looks like this:",
+            post_comment: "We must recompute the shadow costs to decide if this assignment is optimal."
+        });
 
 		var state = [assignments,allocated];
 		var state_string = JSON.stringify(state);
@@ -547,6 +577,7 @@ optimisation.stepping_stone = function(assignments,costs) {
 		allocated = optimisation.allocations(assignments,allocated,variation);
 	}
 	frame({
+        comment: "Because every $\\Delta_{ij}$ is non-negative, we can't reduce the total cost by moving any allocation. This assignment is optimal.",
 		optimal:true
 	});
 
@@ -562,6 +593,9 @@ optimisation.stepping_stone = function(assignments,costs) {
 optimisation.stepping_stone_display = function(frames) {
 	var div = $('<div class="optimisation-display"/>');
 	var frame_htmls = frames.map(function(frame) {
+        if(frame.comment) {
+            div.append($('<p/>').html(frame.comment));
+        }
 		var table = $('<table class="optimisation-table stepping-stone"><thead></thead><tbody></tbody><tfoot></tfoot></table>');
 		div.append(table);
 
@@ -573,7 +607,9 @@ optimisation.stepping_stone_display = function(frames) {
 		for(var i=0;i<num_columns;i++) {
 			tr.append($('<th/>').text(i+1));
 		}
-		tr.append('<th>$u_i$</th>');
+        if(frame.show_shadow_costs) {
+    		tr.append('<th>$u_i$</th>');
+        }
 		table.find('thead').append(tr);
 
 		frame.assignments.forEach(function(row,i) {
@@ -583,12 +619,18 @@ optimisation.stepping_stone_display = function(frames) {
 				var shadow_cost = frame.shadow_costs[i][j];
 				var cost = frame.costs[i][j];
 				var td = $('<td class="cell"/>')
-				td.append($('<span class="shadow-cost"/>').text(shadow_cost));
+                if(frame.show_deltas) {
+    				td.append($('<span class="shadow-cost"/>').text(cost - shadow_cost));
+                }
 				td.append($('<span class="cost"/>').text(cost));
 				td.append($('<span class="assignment"/>').text(frame.allocated[i][j] ? assignment : ''));
 				tr.append(td);
 			});
-			tr.append($('<td/>').text(frame.row_shadows[i]));
+            if(frame.show_shadow_costs) {
+                var shadow = $('<td/>');
+                tr.append(shadow);
+    			shadow.text(frame.row_shadows[i]);
+            }
 			table.find('tbody').append(tr);
 		});
 
@@ -604,13 +646,20 @@ optimisation.stepping_stone_display = function(frames) {
 			});
 		}
 
-		tr = $('<tr/>');
-		tr.append('<th>$v_j$</th>');
-		for(var i=0;i<num_columns;i++) {
-			tr.append($('<td/>').text(frame.column_shadows[i]));
-		}
-		tr.append('<td/>');
-		table.find('tfoot').append(tr);
+        if(frame.show_shadow_costs) {
+            tr = $('<tr/>');
+            tr.append('<th>$v_j$</th>');
+            for(var i=0;i<num_columns;i++) {
+                var shadow = $('<td/>');
+                tr.append(shadow);
+                shadow.text(frame.column_shadows[i]);
+            }
+            tr.append('<td/>');
+            table.find('tfoot').append(tr);
+        }
+        if(frame.post_comment) {
+            div.append($('<p/>').html(frame.post_comment));
+        }
 	});
 	return div;
 }
