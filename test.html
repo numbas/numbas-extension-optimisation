@@ -1,18 +1,9 @@
 <!doctype html>
 <html>
 <head>
-		<!-- numbas stuff -->
-		<script charset="UTF-8" type="text/javascript" src="../../runtime/scripts/numbas.js" charset="utf-8"></script>
-		<script charset="UTF-8" type="text/javascript" src="../../runtime/scripts/jme.js" charset="utf-8"></script>
-		<script charset="UTF-8" type="text/javascript" src="../../runtime/scripts/jme-builtins.js" charset="utf-8"></script>
-		<script charset="UTF-8" type="text/javascript" src="../../runtime/scripts/jme-display.js" charset="utf-8"></script>
-		<script charset="UTF-8" type="text/javascript" src="../../runtime/scripts/math.js" charset="utf-8"></script>
-		<script charset="UTF-8" type="text/javascript" src="../../runtime/scripts/util.js" charset="utf-8"></script>
-		<script charset="UTF-8" type="text/javascript" src="../../runtime/scripts/localisation.js" charset="utf-8"></script>
-
-		<!-- R.js - localisation -->
-		<script charset="UTF-8" type="text/javascript" src="../../runtime/scripts/i18next/i18next.js"></script>
-		<script charset="UTF-8" type="text/javascript" src="../../tests/locales.js"></script>
+        <meta charset="utf-8">
+        <script src="../../tests/jme-runtime.js"></script>
+        <script src="../../tests/locales.js"></script>
 
 		<!--JQuery scripts-->
         <script charset="UTF-8" type="text/javascript" src="../../runtime/scripts/jquery/jquery.js"></script>
@@ -124,6 +115,66 @@
                     $('body').append('<hr>');
 				} catch(e) {
 				}
+
+                var allocations = [
+                    {
+                        valid: true,
+                        allocation: [
+                            [0,0,0],
+                            [0,122,0],
+                            [17,8,1],
+                            [0,0,37]
+                        ]
+                    },
+                    {
+                        valid: true,
+                        allocation: [
+                            [0,8,28],
+                            [0,122,0],
+                            [17,0,9],
+                            [0,0,1]
+                        ]
+                    },
+                    {
+                        valid: true,
+                        allocation: [
+                            [0,36,0],
+                            [0,86,0],
+                            [17,8,1],
+                            [0,0,37]
+                        ]
+                    },
+                    {
+                        valid: false,   //arbitrarily reassigned some allocation to more costly choices
+                        allocation: [
+                            [1,7,28],
+                            [0,122,0],
+                            [17,0,9],
+                            [0,0,1]
+                        ]
+                    },
+                    {
+                        valid: false,
+                        allocation: [   // demand does not add up to the right total
+                            [0,35,1],
+                            [0,86,0],
+                            [17,8,1],
+                            [0,0,37]
+                        ]
+                    }
+                ];
+                var supplies = [36,122,26,37];
+                var demands = [17,130,38];
+                var costs = [
+                    [9,7,8,0],
+                    [4,1,7,0],
+                    [5,7,7,0],
+                    [6,1,1,0]
+                ];
+                allocations.forEach(function(t,i) {
+                    var valid = optimisation.valid_minimum_cost_allocation(supplies,demands,costs,t.allocation);
+                    console.log(i,valid,valid==t.valid);
+                });
 
                 setTimeout(function() {
                     MathJax.Hub.Typeset();
