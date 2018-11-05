@@ -194,12 +194,11 @@ optimisation.valid_minimum_cost_allocation = function(supplies,demands,costs,all
         return l.map(fn).sort(function(a,b){return a>b ? 1 : a<b ? -1 : 0})[l.length-1];
     }
 
-    function allocate(cell,supplies,demands,cells,depth) {
+    function allocate(cell,supplies,demands,cells) {
         var supply = supplies[cell.s];
         var demand = demands[cell.d];
         var amount = max_allocation(cell,supplies,demands);
         if(amount>0) {
-            //console.log(`${depth} allocate ${amount} to ${cell.s},${cell.d} for ${costs[cell.s][cell.d]}`);
             supplies = supplies.slice();
             demands = demands.slice();
             supplies[cell.s] -= amount;
@@ -210,7 +209,7 @@ optimisation.valid_minimum_cost_allocation = function(supplies,demands,costs,all
     }
 
 
-    function step(supplies,demands,cells,depth='') {
+    function step(supplies,demands,cells) {
         if(cells.length==0) {
             return true;
         }
@@ -224,21 +223,19 @@ optimisation.valid_minimum_cost_allocation = function(supplies,demands,costs,all
             // of those, find cells that the student assigned the maximum allocation to
             choose_cells = choose_cells.filter(function(c){return allocation[c.s][c.d]==max_allocation(c,supplies,demands)});
         }
-        //maxallocation>0 && console.log(`${depth} mincost: ${mincost} maxallocation: ${maxallocation}, ${JSON.stringify(choose_cells.map(c=>c.s+','+c.d))}, ${cells.length} cells left`);
         if(!choose_cells.length) {
             return false;
         }
         if(maxallocation==0) {
             cells = cells.filter(function(c2){return choose_cells.indexOf(c2)==-1});
-            return step(supplies,demands,cells,depth);
+            return step(supplies,demands,cells);
         } else {
             var res = choose_cells.some(function(c) {
-                //console.log(`${depth} trying ${c.s},${c.d} with ${cells.length} cells`);
-                var r = allocate(c,supplies,demands,cells,depth);
+                var r = allocate(c,supplies,demands,cells);
                 if(!r.cells.length) {
                     return true;
                 } else {
-                    return step(r.supplies,r.demands,r.cells,depth+(maxallocation>0 ? '    ' : ''));
+                    return step(r.supplies,r.demands,r.cells);
                 }
             });
             return res;
