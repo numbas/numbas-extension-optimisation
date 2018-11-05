@@ -491,6 +491,7 @@ optimisation.stepping_stone_loop = function(assignments,allocated,costs) {
         minimum_change = Math.min(minimum_change,assignments[path[i][0]][path[i][1]]);
     }
     return {
+        min_delta: costs[starti][startj]-shadow_costs[starti][startj],
         path: path,
         minimum_change: minimum_change
     }
@@ -636,7 +637,7 @@ optimisation.stepping_stone = function(assignments,costs) {
             break;
         }
         frame({
-            comment: "The lowest $\\Delta_{ij}$ is $"+res.minimum_change+"$, so this solution is not optimal.",
+            comment: "The lowest $\\Delta_{ij}$ is $\\Delta_{"+(res.path[0][0]+1)+","+(res.path[0][1]+1)+"} = "+res.min_delta+"$, so this solution is not optimal.",
             show_shadow_costs: true,
             show_deltas: true
         });
