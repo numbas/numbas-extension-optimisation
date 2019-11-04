@@ -488,7 +488,10 @@ optimisation.stepping_stone_loop = function(assignments,allocated,costs) {
 
     var minimum_change = Infinity;
     for(var i=1;i<path.length;i+=2) {
-        minimum_change = Math.min(minimum_change,assignments[path[i][0]][path[i][1]]);
+        var assignment = assignments[path[i][0]][path[i][1]];
+        if(assignment>0) {
+            minimum_change = Math.min(minimum_change,assignment);
+        }
     }
     return {
         min_delta: costs[starti][startj]-shadow_costs[starti][startj],

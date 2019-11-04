@@ -40,6 +40,7 @@
 <body>
 		<script>
 			Numbas.queueScript('base',['jquery'],function() {});
+            Numbas.activateExtension('optimisation');
 			Numbas.queueScript('go',['jme','extensions/optimisation/optimisation.js'],function() {
 				var optimisation = Numbas.extensions.optimisation;
 				window.show = function(a) {
@@ -50,6 +51,17 @@
 					l.columns = l[0].length;
 					return l;
 				}
+
+                var initial_assignment = matrix([[0,0,0,76],[0,166,20,17],[100,0,0,0]]);
+                var costs = matrix([[3,6,3,2],[6,7,4,6],[2,4,6,4]]);
+                var res = optimisation.stepping_stone(initial_assignment,costs);
+                console.log(res);
+                $('body').append(optimisation.stepping_stone_display(res.frames));
+                var allocations = optimisation.allocations(res.result);
+                console.log(optimisation.assignment_is_optimal(res.result,allocations,costs));
+
+                return;
+
 
 				var result = optimisation.nw_corner([359,476,435],[481,436,150]);
 				$('body').append('<h1 id="nwcorner">NW corner</h1>');
@@ -175,6 +187,7 @@
                     var valid = optimisation.valid_minimum_cost_allocation(supplies,demands,costs,t.allocation);
                     console.log(i,valid,valid==t.valid);
                 });
+
 
                 setTimeout(function() {
                     MathJax.Hub.Typeset();
