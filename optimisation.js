@@ -1968,52 +1968,52 @@ optimisation.evpi = function(utility,probabilities) {
     var TString = types.TString;
     var TVector = types.TVector;
 
-    scope.addFunction(new funcObj('random_partition',[TNum,TNum],TList,optimisation.random_partition,{unwrapValues: true}));
-    scope.addFunction(new funcObj('random_partition',[TNum,TNum,TNum],TList,optimisation.random_partition,{unwrapValues: true}));
+    scope.addFunction(new funcObj('random_partition',[TNum,TNum],TList,optimisation.random_partition,{unwrapValues: true, random: true}));
+    scope.addFunction(new funcObj('random_partition',[TNum,TNum,TNum],TList,optimisation.random_partition,{unwrapValues: true, random: true}));
 
     scope.addFunction(new funcObj('best_point',[TList],TNum,function(program) {
         var result = optimisation.solve_linear_program(program);
         return result.best_point;
-    },{unwrapValues: true}));
+    },{unwrapValues: true, random: false}));
 
     scope.addFunction(new funcObj('best_coords',[TList],TList,function(program) {
         var result = optimisation.solve_linear_program(program);
         return result.best_coords;
-    },{unwrapValues: true}));
+    },{unwrapValues: true, random: false}));
 
     scope.addFunction(new funcObj('binding_lines',[TList],TList,function(program) {
         var result = optimisation.solve_linear_program(program);
         return result.binding_lines;
-    },{unwrapValues: true}));
+    },{unwrapValues: true, random: false}));
 
     scope.addFunction(new funcObj('nw_corner',[TList,TList],TMatrix,function(supplies,demands) {
         var result = optimisation.nw_corner(supplies,demands);
         return new TMatrix(result.result);
-    },{unwrapValues: true}));
+    },{unwrapValues: true, random: false}));
 
     scope.addFunction(new funcObj('nw_corner_display',[TList,TList],THTML,function(supplies,demands) {
         var result = optimisation.nw_corner(supplies,demands);
         return new THTML(optimisation.nw_corner_display(result.frames));
-    },{unwrapValues: true}));
+    },{unwrapValues: true, random: false}));
 
     scope.addFunction(new funcObj('minimum_cost',[TList,TList,TMatrix],TMatrix,function(supplies,demands,costs) {
         var result = optimisation.minimum_cost(supplies,demands,costs);
         return new TMatrix(result.result);
-    },{unwrapValues: true}));
+    },{unwrapValues: true, random: false}));
 
     scope.addFunction(new funcObj('minimum_cost_display',[TList,TList,TMatrix],THTML,function(supplies,demands,costs) {
         var result = optimisation.minimum_cost(supplies,demands,costs);
         return new THTML(optimisation.minimum_cost_display(result.frames));
-    },{unwrapValues: true}));
+    },{unwrapValues: true, random: false}));
 
     scope.addFunction(new funcObj('valid_minimum_cost_allocation',[TList,TList,TList,TMatrix],TBool,function(supplies,demands,costs,allocation) {
         return new TBool(optimisation.valid_minimum_cost_allocation(supplies,demands,costs,allocation));
-    },{unwrapValues: true}));
+    },{unwrapValues: true, random: false}));
 
     scope.addFunction(new funcObj('shadow_costs',[TMatrix,TList,TMatrix],TList,function(assignments,allocated,costs) {
         var result = optimisation.shadow_costs(assignments,allocated,costs);
         return [new TMatrix(result.shadow_costs),result.rows,result.columns];
-    },{unwrapValues: true}));
+    },{unwrapValues: true, random: false}));
 
     scope.addFunction(new funcObj('assignment_is_optimal',[TMatrix,TMatrix],TBool,function(assignments,costs) {
         try {
@@ -2022,11 +2022,11 @@ optimisation.evpi = function(utility,probabilities) {
             return false;
         }
         return optimisation.assignment_is_optimal(assignments,allocated,costs);
-    },{unwrapValues: true}));
+    },{unwrapValues: true, random: false}));
 
     scope.addFunction(new funcObj('assignment_is_valid',[TMatrix,TList,TList],TBool,function(assignments,supplies,demands) {
         return optimisation.assignment_is_valid(assignments,supplies,demands);
-    },{unwrapValues: true}));
+    },{unwrapValues: true, random: false}));
 
     scope.addFunction(new funcObj('stepping_stone_works',[TMatrix,TMatrix],TBool,function(assignments,costs) {
         try {
@@ -2035,7 +2035,7 @@ optimisation.evpi = function(utility,probabilities) {
             return false;
         }
         return true;
-    },{unwrapValues: true}));
+    },{unwrapValues: true, random: false}));
 
     scope.addFunction(new funcObj('stepping_stone',[TMatrix,TMatrix],TMatrix,function(assignments,costs) {
         try {
@@ -2044,32 +2044,32 @@ optimisation.evpi = function(utility,probabilities) {
             return new TMatrix(assignments);
         }
         return new TMatrix(result.result);
-    },{unwrapValues: true}));
+    },{unwrapValues: true, random: false}));
 
     scope.addFunction(new funcObj('stepping_stone_display',[TMatrix,TMatrix],THTML,function(assignments,costs) {
         var result = optimisation.stepping_stone(assignments,costs);
         return new THTML(optimisation.stepping_stone_display(result.frames));
-    },{unwrapValues: true}));
+    },{unwrapValues: true, random: false}));
 
     scope.addFunction(new funcObj('assignment_cost',[TMatrix,TMatrix],TNum,function(assignments,costs) {
         return optimisation.assignment_cost(assignments,costs);
-    },{unwrapValues: true}));
+    },{unwrapValues: true, random: false}));
 
     scope.addFunction(new funcObj('cost_table',[TList,TList,TMatrix],THTML,function(supply,demand,costs) {
         return new THTML(optimisation.cost_table(supply,demand,costs));
-    },{unwrapValues: true}))
+    },{unwrapValues: true, random: false}))
 
     scope.addFunction(new funcObj('assignment_table',[TMatrix,TList,TList],THTML,function(assignments,supply,demand) {
         return new THTML(optimisation.assignment_table(assignments,supply,demand));
-    },{unwrapValues: true}))
+    },{unwrapValues: true, random: false}))
 
     scope.addFunction(new funcObj('show_cost_calculation',[TMatrix,TMatrix],TString,function(assignments,costs) {
         return optimisation.show_cost_calculation(assignments,costs);
-    },{unwrapValue: true, latex: true}));
+    },{unwrapValue: true, latex: true, random: false}));
 
     scope.addFunction(new funcObj('job_cost_table',[TMatrix,TString,TString],THTML,function(costs,worker_name,job_name) {
         return new THTML(optimisation.job_cost_table(costs,worker_name,job_name));
-    },{unwrapValues: true}));
+    },{unwrapValues: true, random: false}));
 
     scope.addFunction(new funcObj('hungarian',[TMatrix],TMatrix,function(costs) {
         var res = optimisation.hungarian(costs);
@@ -2087,47 +2087,47 @@ optimisation.evpi = function(utility,probabilities) {
         out.rows = costs.rows;
         out.columns = costs.columns;
         return new TMatrix(out);
-    },{unwrapValues: true}));
+    },{unwrapValues: true, random: false}));
 
     scope.addFunction(new funcObj('hungarian_display',[TMatrix],THTML,function(costs) {
         var res = optimisation.hungarian(costs);
         return new THTML(optimisation.hungarian_display(res.frames));
-    },{unwrapValues: true}));
+    },{unwrapValues: true, random: false}));
 
     scope.addFunction(new funcObj('utility_set',[TMatrix,TList],THTML,function(utility,labels) {
         return new THTML(optimisation.utility_set(utility,labels));
-    },{unwrapValues: true}));
+    },{unwrapValues: true, random: false}));
 
     scope.addFunction(new funcObj('show_expected_value_criteria',[TMatrix,TList,TNum,TNum],THTML,function(utility,labels,prob_state_1,prob_state_2) {
         return new THTML(optimisation.show_expected_value_criteria(utility,labels,prob_state_1,prob_state_2));
-    },{unwrapValues: true}));
+    },{unwrapValues: true, random: false}));
 
-    scope.addFunction(new funcObj('evpi',[TMatrix,TList],TNum,optimisation.evpi,{unwrapValues: true}));
-    scope.addFunction(new funcObj('evpi',[TMatrix,TVector],TNum,optimisation.evpi,{unwrapValues: true}));
+    scope.addFunction(new funcObj('evpi',[TMatrix,TList],TNum,optimisation.evpi,{unwrapValues: true, random: false}));
+    scope.addFunction(new funcObj('evpi',[TMatrix,TVector],TNum,optimisation.evpi,{unwrapValues: true, random: false}));
 
     scope.addFunction(new funcObj('simplex',[TList,TList],TList,function(objective,equations) {
         var res = optimisation.simplex(objective,equations);
         return res.result;
-    },{unwrapValues: true}));
+    },{unwrapValues: true, random: false}));
     scope.addFunction(new funcObj('simplex_optimal_tableau',[TList,TList],TMatrix,function(objective,equations) {
         var res = optimisation.simplex(objective,equations);
         return new TMatrix(res.tableau);
-    },{unwrapValues: true}));
+    },{unwrapValues: true, random: false}));
     scope.addFunction(new funcObj('simplex_find_basics',[TMatrix],TList,function(tableau) {
         return optimisation.simplex_find_basics(tableau)
-    },{unwrapValues: true}));
+    },{unwrapValues: true, random: false}));
     scope.addFunction(new funcObj('simplex_display',[TList,TList],THTML,function(objective,equations) {
         var res = optimisation.simplex(objective,equations);
         return new THTML(optimisation.simplex_display(res.frames));
-    },{unwrapValues: true}));
+    },{unwrapValues: true, random: false}));
 
     scope.addFunction(new funcObj('simplex_final_tableau',[TList,TList],THTML,function(objective,equations) {
         var res = optimisation.simplex(objective,equations);
         var html = optimisation.simplex_display_tableau(res.frames[res.frames.length-1]);
         return new THTML(html);
-    },{unwrapValues: true}));
+    },{unwrapValues: true, random: false}));
 
     scope.addFunction(new funcObj('convex_hull',[TList],TList,function(points) {
         return optimisation.convex_hull(points);
-    },{unwrapValues: true}));
+    },{unwrapValues: true, random: false}));
 });
