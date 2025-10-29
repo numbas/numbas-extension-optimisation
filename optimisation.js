@@ -2,6 +2,17 @@ Numbas.addExtension('optimisation',['util','math','jme'], function(optimisation)
 
 var util = Numbas.util;
 
+function element(name, attr, content) {
+    const el = document.createElement(name);
+    if(attr) {
+        Object.entries(attr).forEach(([k,v]) => el.setAttribute(k,v));
+    }
+    if(content !== undefined) {
+        el.innerHTML = content;
+    }
+    return el;
+}
+
 function makeFrame(data,extra) {
     extra = extra || {};
     for(var k in extra) {
@@ -57,34 +68,33 @@ optimisation.nw_corner = function(supplies,demands) {
 }
 
 optimisation.nw_corner_display = function(frames) {
-    var div = $('<div class="optimisation-display"/>');
+    var div = element('div', {class: "optimisation-display"});
     frames.map(function(frame) {
-        var table = $('<table class="optimisation-table nw-corner-tableau"><thead><tr><td></td></tr></thead><tbody></tbody><tfoot></tfoot></table>');
+        var table = element('table', {class: "optimisation-table nw-corner-tableau"}, '<thead><tr><td></td></tr></thead><tbody></tbody><tfoot></tfoot>');
         for(var i=0;i<frame.demands.length;i++) {
-            table.find('thead tr').append($('<th class="demand-label"/>').text(i+1));
+            table.querySelector('thead tr').append(element('th', {class:"demand-label"},i+1));
         }
-        table.find('thead tr').append('<th>Supply</th>');
+        table.querySelector('thead tr').append(element('th', {}, 'Supply'));
         for(var i=0;i<frame.grid.length;i++) {
-            var tr = $('<tr/>');
-            tr.append($('<th class="supply-label" />').text(i));
+            var tr = element('tr');
+            tr.append(element('th', {class:"supply-label"},i));
             for(var j=0;j<frame.grid[i].length;j++) {
-                var td = $('<td/>').text(frame.grid[i][j]);
+                var td = element('td', {}, frame.grid[i][j]);
                 if(frame.from==i && frame.to==j) {
-                    td.addClass('changed');
+                    td.classList.add('changed');
                 }
                 tr.append(td);
             }
-            tr.append($('<td/>').text(frame.supplies[i]));
-            table.find('tbody').append(tr);
+            tr.append(element('td', {}, frame.supplies[i]));
+            table.querySelector('tbody').append(tr);
         }
-        var tr = $('<tr/>');
-        tr.append('<th>Demand</th>');
+        var tr = element('tr', {}, '<th>Demand</th>');
         for(var i=0;i<frame.demands.length;i++) {
-            tr.append($('<td/>').text(frame.demands[i]));
+            tr.append(element('td', frame.demands[i]));
         }
-        tr.append('<td/>');
-        table.find('tfoot').append(tr);
-        $(div).append(table);
+        tr.append(element('td'));
+        table.querySelector('tfoot').append(tr);
+        div.append(table);
         return table;
     });
     return div;
@@ -246,52 +256,51 @@ optimisation.valid_minimum_cost_allocation = function(supplies,demands,costs,all
 
 
 optimisation.minimum_cost_display = function(frames) {
-    var div = $('<div class="optimisation-display"/>');
+    var div = element('div', {class:"optimisation-display"});
     var frame_htmls = frames.map(function(frame) {
-        var frame_div = $('<div class="frame"/>');
+        var frame_div = element('div', {class:"frame"});
         div.append(frame_div);
 
-        var costs_table = $('<table class="optimisation-table minimum-cost-costs"><thead><tr><th>Costs</th></thead><tbody></tbody></table>');
+        var costs_table = element('table', {class:"optimisation-table minimum-cost-costs"}, '<thead><tr><th>Costs</th></thead><tbody></tbody>');
         frame_div.append(costs_table);
-        var tableau = $('<table class="optimisation-table minimum-cost-tableau"><thead><tr><td></td></tr></thead><tbody></tbody></table>');
+        var tableau = element('table', {class:"optimisation-table minimum-cost-tableau"}, '<thead><tr><td></td></tr></thead><tbody></tbody>');
         frame_div.append(tableau);
 
         for(var i=0;i<frame.demands.length;i++) {
-            tableau.find('thead tr').append($('<th class="demand-label"/>').text(i+1));
-            costs_table.find('thead tr').append($('<th class="demand-label"/>').text(i+1));
+            tableau.querySelector('thead tr').append(element('th', {class: "demand-label"}, i+1));
+            costs_table.querySelector('thead tr').append(element('th', {class: "demand-label"}, i+1));
         }
-        tableau.find('thead tr').append('<th>Supply</th>');
+        tableau.querySelector('thead tr').append(element('th', {}, 'Supply'));
         for(var i=0;i<frame.grid.length;i++) {
-            var tr = $('<tr/>');
-            var cost_tr = $('<tr/>');
-            tr.append($('<th class="supply-label" />').text(i+1));
-            cost_tr.append($('<th class="supply-label" />').text(i+1));
+            var tr = element('tr');
+            var cost_tr = element('tr');
+            tr.append(element('th', {class: "supply-label"}, i+1));
+            cost_tr.append(element('th', {class: "supply-label"}, i+1));
             for(var j=0;j<frame.grid[i].length;j++) {
-                var td = $('<td/>').text(frame.grid[i][j]);
+                var td = element('td', {}, frame.grid[i][j]);
                 if(frame.from==i && frame.to==j) {
-                    td.addClass('changed');
+                    td.classList.add('changed');
                 }
                 tr.append(td);
 
-                var cost_td = $('<td/>').text(frame.costs[i][j]);
+                var cost_td = element('td', {}, frame.costs[i][j]);
                 if(frame.from==i && frame.to==j) {
-                    cost_td.addClass('changed');
+                    cost_td.classList.add('changed');
                 } else if((frame.from!=i && frame.supplies[i]==0) || (frame.to!=j && frame.demands[j]==0)) {
-                    cost_td.addClass('covered');
+                    cost_td.classList.add('covered');
                 }
                 cost_tr.append(cost_td);
             }
-            tr.append($('<td/>').text(frame.supplies[i]));
-            tableau.find('tbody').append(tr);
-            costs_table.find('tbody').append(cost_tr);
+            tr.append(element('td', {}, frame.supplies[i]));
+            tableau.querySelector('tbody').append(tr);
+            costs_table.querySelector('tbody').append(cost_tr);
         }
-        var tr = $('<tr/>');
-        tr.append('<th>Demand</th>');
+        var tr = element('tr', {}, '<th>Demand</th>');
         for(var i=0;i<frame.demands.length;i++) {
-            tr.append($('<td/>').text(frame.demands[i]));
+            tr.append(element('td', {}, frame.demands[i]));
         }
-        tr.append('<td/>');
-        tableau.find('tbody').append(tr);
+        tr.append(element('td'));
+        tableau.querySelector('tbody').append(tr);
 
         return frame_div;
     });
@@ -701,74 +710,75 @@ optimisation.stepping_stone = function(assignments,costs) {
 }
 
 optimisation.stepping_stone_display = function(frames) {
-    var div = $('<div class="optimisation-display"/>');
+    var div = element('div',{class:'optimisation-display'});
+
     var frame_htmls = frames.map(function(frame) {
         if(frame.comment) {
-            div.append($('<p/>').html(frame.comment));
+            div.append(element('p',{},frame.comment));
         }
-        var table = $('<table class="optimisation-table stepping-stone"><thead></thead><tbody></tbody><tfoot></tfoot></table>');
+        var table = element('table', {class:"optimisation-table stepping-stone"}, '<thead></thead><tbody></tbody><tfoot></tfoot></table>');
         div.append(table);
 
         var num_rows = frame.assignments.length;
         var num_columns = frame.assignments[0].length;
 
-        var tr = $('<tr/>');
-        tr.append('<td/>');
+        var tr = element('tr');;
+        tr.append(element('td'));
         for(var i=0;i<num_columns;i++) {
-            tr.append($('<th/>').text(i+1));
+            tr.append(element('th',{},i+1));
         }
         if(frame.show_shadow_costs) {
-            tr.append('<th>$u_i$</th>');
+            tr.append(element('th',{},'$u_i$'));
         }
-        table.find('thead').append(tr);
+        table.querySelector('thead').append(tr);
 
         frame.assignments.forEach(function(row,i) {
-            var tr = $('<tr/>');
-            tr.append($('<th/>').text(i+1));
+            var tr = element('tr');
+            tr.append(element('th',{},i+1));
             row.forEach(function(assignment,j) {
                 var shadow_cost = frame.shadow_costs[i][j];
                 var cost = frame.costs[i][j];
-                var td = $('<td class="cell"/>')
+                var td = element('td',{class:"cell"});
                 if(frame.show_deltas) {
-                    td.append($('<span class="shadow-cost"/>').text(cost - shadow_cost));
+                    td.append(element('span', {class:"shadow-cost"}, cost - shadow_cost));
                 }
-                td.append($('<span class="cost"/>').text(cost));
-                td.append($('<span class="assignment"/>').text(frame.allocated[i][j] ? assignment : ''));
+                td.append(element('span', {class: "cost"}, cost));
+                td.append(element('span', {class: 'assignment'}, frame.allocated[i][j] ? assignment : ''));
                 tr.append(td);
             });
             if(frame.show_shadow_costs) {
-                var shadow = $('<td/>');
+                var shadow = element('td');
                 tr.append(shadow);
-                shadow.text(frame.row_shadows[i]);
+                shadow.textContent = frame.row_shadows[i];
             }
-            table.find('tbody').append(tr);
+            table.querySelector('tbody').append(tr);
         });
 
         if(frame.path) {
             frame.path.forEach(function(pos,n) {
                 var i = pos[0];
                 var j = pos[1];
-                var td = table.find('tbody tr').eq(i).find('td').eq(j);
-                td.addClass('path');
+                var td = table.querySelectorAll('tbody tr')[i].querySelectorAll('td')[j];
+                td.classList.add('path');
                 if(n==0) {
-                    td.addClass('first');
+                    td.classList.add('first');
                 }
             });
         }
 
         if(frame.show_shadow_costs) {
-            tr = $('<tr/>');
-            tr.append('<th>$v_j$</th>');
+            tr = element('tr');
+            tr.append(element('th', {}, '$v_j$'));
             for(var i=0;i<num_columns;i++) {
-                var shadow = $('<td/>');
+                var shadow = element('td');
                 tr.append(shadow);
-                shadow.text(frame.column_shadows[i]);
+                shadow.textContent = frame.column_shadows[i];
             }
-            tr.append('<td/>');
-            table.find('tfoot').append(tr);
+            tr.append(element('td'));
+            table.querySelector('tfoot').append(tr);
         }
         if(frame.post_comment) {
-            div.append($('<p/>').html(frame.post_comment));
+            div.append(element('p', {}, frame.post_comment));
         }
     });
     return div;
@@ -788,56 +798,56 @@ optimisation.assignment_cost = function(assignments,costs) {
 }
 
 optimisation.cost_table = function(supply,demand,costs) {
-    var table = $('<table class="optimisation-table costs"><thead><tr><td colspan="2"><th colspan="'+demand.length+'">Destination</th><td/></tr></thead><tbody></tbody><tfoot></tfoot></table>');
-    var top_tr = $('<tr><td colspan="2"/></tr>');
-    var bottom_tr = $('<tr><td/><th>Demand</th></tr>');
+    var table = element('table', {class:"optimisation-table costs"}, '<thead><tr><td colspan="2"><th colspan="'+demand.length+'">Destination</th><td/></tr></thead><tbody></tbody><tfoot></tfoot></table>');
+    var top_tr = element('tr', {}, '<td colspan="2"/>');
+    var bottom_tr = element('tr', {}, '<td/><th>Demand</th>');
     for(var i=0;i<demand.length;i++) {
-      top_tr.append($('<th/>').text(i+1));
-      bottom_tr.append($('<td/>').text(demand[i]));
+      top_tr.append(element('th', {}, i+1));
+      bottom_tr.append(element('td', {}, demand[i]));
     }
-    top_tr.append('<th>Supply</th>');
-    bottom_tr.append('<td/>');
-    table.find('thead').append(top_tr);
-    table.find('tfoot').append(bottom_tr);
+    top_tr.append(element('th', {}, 'Supply'));
+    bottom_tr.append(element('td'));
+    table.querySelector('thead').append(top_tr);
+    table.querySelector('tfoot').append(bottom_tr);
     for(var i=0;i<supply.length;i++) {
-      var tr = $('<tr/>');
+      var tr = element('tr');
       if(i==0) {
-        tr.append($('<th>Source</th>').attr('rowspan',supply.length));
+        tr.append(element('th', {rowspan: supply.length}, 'Source'));
       }
-      tr.append($('<th/>').text(i+1));
+      tr.append(element('th', {}, i+1));
       for(var j=0;j<demand.length;j++) {
-        tr.append($('<td/>').text(costs[i][j]));
+        tr.append(element('td', {}, costs[i][j]));
       }
-      tr.append($('<td/>').text(supply[i]));
-      table.find('tbody').append(tr);
+      tr.append(element('td', {}, supply[i]));
+      table.querySelector('tbody').append(tr);
     }
 
     return table;
 }
 
 optimisation.assignment_table = function(assignments,supply,demand) {
-    var table = $('<table class="optimisation-table assignment"><thead><tr><td colspan="2"><th colspan="'+demand.length+'">Destination</th><td/></tr></thead><tbody></tbody><tfoot></tfoot></table>');
-    var top_tr = $('<tr><td colspan="2"/></tr>');
-    var bottom_tr = $('<tr><td/><th>Demand</th></tr>');
+    var table = element('table', {class: "optimisation-table assignment"}, '<thead><tr><td colspan="2"><th colspan="'+demand.length+'">Destination</th><td/></tr></thead><tbody></tbody><tfoot></tfoot>');
+    var top_tr = element('tr', {}, '<td colspan="2"/>');
+    var bottom_tr = element('tr', {}, '<td/><th>Demand</th>');
     for(var i=0;i<demand.length;i++) {
-      top_tr.append($('<th/>').text(i+1));
-      bottom_tr.append($('<td/>').text(demand[i]));
+      top_tr.append(element('th', {}, i+1));
+      bottom_tr.append(element('td', {}, demand[i]));
     }
-    top_tr.append('<th>Supply</th>');
-    bottom_tr.append('<td/>');
-    table.find('thead').append(top_tr);
-    table.find('tfoot').append(bottom_tr);
+    top_tr.append(element('th', {}, 'Supply'));
+    bottom_tr.append(element('td'));
+    table.querySelector('thead').append(top_tr);
+    table.querySelector('tfoot').append(bottom_tr);
     for(var i=0;i<supply.length;i++) {
-      var tr = $('<tr/>');
+      var tr = element('tr');
       if(i==0) {
-        tr.append($('<th>Source</th>').attr('rowspan',supply.length));
+        tr.append(element('th', {rowspan: supply.length}, 'Source'));
       }
-      tr.append($('<th/>').text(i+1));
+      tr.append(element('th', {}, i+1));
       for(var j=0;j<demand.length;j++) {
-        tr.append($('<td/>').text(assignments[i][j]));
+        tr.append(element('td', {}, assignments[i][j]));
       }
-      tr.append($('<td/>').text(supply[i]));
-      table.find('tbody').append(tr);
+      tr.append(element('td', {}, supply[i]));
+      table.querySelector('tbody').append(tr);
     }
 
     return table;
@@ -1059,102 +1069,101 @@ function rationalNumber(f) {
 }
 
 optimisation.simplex_display = function(frames) {
-    var div = $('<div class="optimisation-display"/>');
+    var div = element('div', {class: "optimisation-display"});
     var frame_htmls = frames.map(function(frame) {
-        var frame_html = $('<div class="frame"/>');
+        var frame_html = element('div', {class: "frame"});
         div.append(frame_html);
 
         var table = optimisation.simplex_display_tableau(frame);
         frame_html.append(table);
 
         if(frame.comment) {
-            frame_html.append($('<p/>').html(frame.comment));
+            frame_html.append(element('p', {}, frame.comment));
         }
     });
     return div;
 }
 
 optimisation.simplex_display_tableau = function(frame) {
-    var table = $('<table class="optimisation-table simplex"><thead></thead><tbody></tbody></table>');
-    var tr = $('<tr/>');
-    tr.append('<td colspan="3"/>');
+    var table = element('table', {class: "optimisation-table simplex"}, '<thead></thead><tbody></tbody>');
+    var tr = element('tr', {}, '<td colspan="3"/>');
     frame.objective.map(function(v) {
-        tr.append($('<td/>').text(rationalNumber(v)));
+        tr.append(element('td', {}, rationalNumber(v)));
     });
-    table.find('thead').append(tr);
-    var tr = $('<tr/>');
-    tr.append('<th>$c_j$</th>');
-    tr.append('<th class="basics">Basic variables</th>');
-    tr.append('<th class="rhs">Quantity</th>');
+    table.querySelector('thead').append(tr);
+    var tr = element('tr');
+    tr.innerHTML += '<th>$c_j$</th>';
+    tr.append(element('th', {class: "basics"}, 'Basic variables'));
+    tr.append(element('th', {class: "rhs"}, 'Quantity'));
     for(var i=0;i<frame.tableau[0].length-1;i++) {
-        var th = $('<th/>').html('$'+frame.variable_names[i]+'$')
+        var th = element('th', {}, '$'+frame.variable_names[i]+'$');
         tr.append(th);
     }
     if(frame.ratios) {
-        tr.append('<th class="ratio">Ratio</th>');
+        tr.append(element('th', {class: "ratio"}, 'Ratio'));
     }
-    table.find('thead').append(tr);
+    table.querySelector('thead').append(tr);
     frame.tableau.forEach(function(row,i) {
         var is_objective = i==frame.tableau.length-1;
-        var tr = $('<tr/>');
+        var tr = element('tr');
         var basics = [];
         frame.basics.forEach(function(b,j) {
             if(b==i) {
                 basics.push(j);
             }
         });
-        var td_cj = $('<td class="cj"/>');
+        var td_cj = element('td', {class:"cj"});
         tr.append(td_cj);
-        var td_values = $('<td class="basics"/>');
+        var td_values = element('td', {class: "basics"});
         tr.append(td_values);
         if(!is_objective) {
-            td_values.html('$'+basics.map(function(x){return frame.variable_names[x]}).join(',')+'$')
-            td_cj.html(basics.map(function(x){return rationalNumber(frame.objective[x])}).join(','));
+            td_values.innerHTML = '$'+basics.map(function(x){return frame.variable_names[x]}).join(',')+'$'
+            td_cj.innerHTML = basics.map(function(x){return rationalNumber(frame.objective[x])}).join(',');
         } else {
-            td_values.html('$c_j - z_j$');
+            td_values.innerHTML = '$c_j - z_j$';
         }
 
-        var td_rhs = $('<td class="rhs">');
+        var td_rhs = element('td', {class: "rhs"});
         tr.append(td_rhs);
         if(!is_objective) {
-            td_rhs.text(rationalNumber(row[row.length-1]));
+            td_rhs.textContent = rationalNumber(row[row.length-1]);
         }
 
         function show_value(x,j) {
-            var td = $('<td/>');
+            var td = element('td');
             if(!is_objective) {
-                td.text(rationalNumber(x));
+                td.textContent = rationalNumber(x);
             } else {
-                td.text(rationalNumber([-x[0],x[1]]));
+                td.textContent = rationalNumber([-x[0],x[1]]);
             }
             if(i==frame.pivot_row) {
-                td.addClass('pivot-row');
+                td.classList.add('pivot-row');
             }
             if(j==frame.pivot_column) {
-                td.addClass('pivot-column');
+                td.classList.add('pivot-column');
             }
             if(frame.complete && x[0]==1 && x[1]==1) {
-                td.addClass('solution');
+                td.classList.add('solution');
             }
             tr.append(td);
         }
         row.slice(0,row.length-1).forEach(show_value);
         if(frame.ratios && !is_objective) {
-            var td = $('<td class="ratio"/>').text(rationalNumber(frame.ratios[i]));
+            var td = element('td', {class: "ratio"}, rationalNumber(frame.ratios[i]));
             if(i==frame.pivot_row) {
-                td.addClass('pivot-row');
+                td.classList.add('pivot-row');
             }
             tr.append(td);
         }
-        table.find('tbody').append(tr);
+        table.querySelector('tbody').append(tr);
 
         if(is_objective) {
             var z = row.slice(0,row.length-1).map(function(v,j) {
                 return rsub(rsub([0,1],frame.objective[j]),v);
             });
             var otr = tr;
-            var tr = $('<tr class="objective"><td class="cj"></td><td class="basics">$z_j$</td></tr>');
-            tr.append($('<td class="rhs">').text(rationalNumber(row[row.length-1])));
+            var tr = element('tr', {class:"objective"}, '<td class="cj"></td><td class="basics">$z_j$</td>');
+            tr.append(element('td', {class: "rhs"}, rationalNumber(row[row.length-1])));
             z.forEach(show_value);
             otr.before(tr);
         }
@@ -1282,22 +1291,22 @@ function convex_hull_line(left,right,points) {
 optimisation.job_cost_table = function(costs,worker_name,job_name) {
     var num_workers = costs.rows;
     var num_jobs = costs.columns;
-    var table = $('<table class="optimisation-table job-costs"><thead><tr><td colspan="2"><th colspan="'+num_jobs+'">'+job_name+'</th></tr></thead><tbody></tbody><tfoot></tfoot></table>');
-    var top_tr = $('<tr><td colspan="2"/></tr>');
+    var table = element('table', {class: "optimisation-table job-costs"}, '<thead><tr><td colspan="2"><th colspan="'+num_jobs+'">'+job_name+'</th></tr></thead><tbody></tbody><tfoot></tfoot>');
+    var top_tr = element('tr', {}, '<td colspan="2"/>');
     for(var i=0;i<num_jobs;i++) {
-      top_tr.append($('<th/>').text(i+1));
+      top_tr.append(element('th', {}, i+1));
     }
-    table.find('thead').append(top_tr);
+    table.querySelector('thead').append(top_tr);
     for(var i=0;i<num_workers;i++) {
-      var tr = $('<tr/>');
+      var tr = element('tr');
       if(i==0) {
-        tr.append($('<th></th>').text(worker_name).attr('rowspan',num_workers));
+        tr.append(element('th', {rowspan: num_workers}, worker_name));
       }
-      tr.append($('<th/>').text(i+1));
+      tr.append(element('th', {}, i+1));
       for(var j=0;j<num_jobs;j++) {
-        tr.append($('<td/>').text(costs[i][j]));
+        tr.append(element('td', {}, costs[i][j]));
       }
-      table.find('tbody').append(tr);
+      table.querySelector('tbody').append(tr);
     }
 
     return table;
@@ -1550,40 +1559,41 @@ optimisation.hungarian = function(costs) {
 }
 
 optimisation.hungarian_display = function(frames) {
-    var div = $('<div class="optimisation-display"/>');
+    var div = element('div', {class:"optimisation-display"});
     var frame_htmls = frames.map(function(frame) {
-        var frame_div = $('<div class="frame"/>');
+        var frame_div = element('div', {class:"frame"});
         div.append(frame_div);
 
-        frame_div.append($('<p/>').html(frame.message));
+        frame_div.append(element('p', {}, frame.message));
 
-        var table = $('<table class="optimisation-table hungarian"><thead></thead><tbody></tbody></table>');
+        var table = element('table', {class: "optimisation-table hungarian"}, '<thead></thead><tbody></tbody>');
         frame_div.append(table);
 
         var n = frame.grid.length;
         if(frame.show_covers!==false) {
             for(var i=0;i<n;i++) {
                 if(frame.row_covered[i]) {
-                    table.append($('<span class="row-covered"/>').css('top',(i*2+1)+'em'));
+                    table.append(element('span', {class: "row-covered", style: 'top: '+(i*2+1)+'em'}));
                 }
                 if(frame.column_covered[i]) {
-                    table.append($('<span class="column-covered"/>').css('left',(i*2+1)+'em'));
+                    table.append(element('span', {class: "column-covered", style: 'left: '+(i*2+1)+'em'}));
                 }
             }
         }
 
         frame.grid.forEach(function(row,i) {
-            var tr = $('<tr/>');
-            table.find('tbody').append(tr);
+            var tr = element('tr');
+            table.querySelector('tbody').append(tr);
             row.forEach(function(x,j) {
-                var td = $('<td/>').append($('<span class="element"/>').text(x));
+                var td = element('td');
+                td.append(element('span', {class:"element"}, x));
                 if(frame.show_covers!==false && (frame.row_covered[i] || frame.column_covered[j])) {
-                    td.addClass('covered');
+                    td.classList.add('covered');
                 }
                 if(frame.mask[i][j]==star) {
-                    td.addClass('star');
+                    td.classList.add('star');
                 } else if(frame.grid[i][j]==0 && (frame.row_covered[i] || frame.column_covered[j]) && (frame.star_rows[i] || frame.star_columns[j])) {
-                    td.addClass('strike');
+                    td.classList.add('strike');
                 }
                 tr.append(td);
             });
@@ -1641,7 +1651,7 @@ optimisation.linear_programming_board = function(options) {
                 coord_point.setAttribute({visible:true});
                 board.update();
         });
-        $(div).on('mouseout',function(e) {
+        div.addEventListener('pointerleave',function(e) {
                 coord_point.setAttribute({visible:false});
                 board.update();
         });

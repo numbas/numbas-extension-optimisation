@@ -5,9 +5,6 @@
         <script src="../../tests/jme-runtime.js"></script>
         <script src="../../tests/locales.js"></script>
 
-		<!--JQuery scripts-->
-        <script charset="UTF-8" type="text/javascript" src="../../runtime/scripts/jquery/jquery.js"></script>
-
         <script type="text/x-mathjax-config">
             MathJax.Hub.Config({
                 TeX: {
@@ -33,19 +30,29 @@
 
 		<script src="optimisation.js"></script>
 
-		<link rel="stylesheet" href="/numbas/dev/themes/default/files/resources/exam.css"></link>
 		<link rel="stylesheet" href="optimisation.css"></link>
 
 </head>
 <body>
 		<script>
-			Numbas.queueScript('base',['jquery'],function() {});
-            Numbas.activateExtension('optimisation');
+			Numbas.queueScript('base',[],function() {});
 			Numbas.queueScript('go',['jme','extensions/optimisation/optimisation.js'],function() {
+                Numbas.activateExtension('optimisation');
+
 				var optimisation = Numbas.extensions.optimisation;
+
 				window.show = function(a) {
 					console.log(a.map(function(r){return r.join('\t')}).join('\n'));
 				}
+
+                function log(html) {
+                    if(typeof html == 'string') {
+                        document.body.innerHTML += html;
+                    } else {
+                        document.body.append(html);
+                    }
+                }
+
 				function matrix(l) {
 					l.rows = l.length;
 					l.columns = l[0].length;
@@ -64,67 +71,67 @@
 
 
 				var result = optimisation.nw_corner([359,476,435],[481,436,150]);
-				$('body').append('<h1 id="nwcorner">NW corner</h1>');
-				$('body').append(optimisation.nw_corner_display(result.frames));
+				log('<h1 id="nwcorner">NW corner</h1>');
+				log(optimisation.nw_corner_display(result.frames));
 				var result = optimisation.minimum_cost([610,341,281],[325,449,458],matrix([[1,1,1],[1,1,1],[1,1,1]]));
-				$('body').append('<h1 id="mincost">Minimum cost</h1>');
-				$('body').append(optimisation.minimum_cost_display(result.frames));
+				log('<h1 id="mincost">Minimum cost</h1>');
+				log(optimisation.minimum_cost_display(result.frames));
 
 				console.clear();
-				$('body').append('<h1 id="simplex">Simplex</h1>');
+				log('<h1 id="simplex">Simplex</h1>');
 				var result = optimisation.simplex([1,1,0,0],[[2,1,1,0,4],[1,2,0,1,3]]);
-				$('body').append(optimisation.simplex_display(result.frames));
+				log(optimisation.simplex_display(result.frames));
 				console.log(result.result);
 				var result = optimisation.simplex([5,7,0,0,0,0,0,0],[[2,3,1,0,0,0,0,0,240],[1,1,0,1,0,0,0,0,100],[-1,0,0,0,1,0,0,0,-30],[0,-1,0,0,0,1,0,0,-20],[-2,-5,0,0,0,0,1,0,-200],[1,-3,0,0,0,0,0,1,0]]);
-				$('body').append(optimisation.simplex_display(result.frames));
+				log(optimisation.simplex_display(result.frames));
 				console.log(result.result);
 				var result = optimisation.simplex([7,4,0,0,0,0],[ [ 1, 1, 1, 0, 0, 0, 23 ], [ -9, -7, 0, 1, 0, 0, -141 ], [ 5, 9, 0, 0, 1, 0, 155 ], [ -1, -3, 0, 0, 0, 1, -29 ] ]);
-				$('body').append(optimisation.simplex_display(result.frames));
+				log(optimisation.simplex_display(result.frames));
 				console.log(result.result);
 
-				$('body').append('<h1 id="hungarian">Hungarian</h1>');
+				log('<h1 id="hungarian">Hungarian</h1>');
 				var result = optimisation.hungarian([[1,2,3],[2,4,6],[3,6,9]]);
-				$('body').append(optimisation.hungarian_display(result.frames));
+				log(optimisation.hungarian_display(result.frames));
 				var result = optimisation.hungarian([[1,2,3,4,5],[2,4,6,3,2],[3,6,9,6,3],[4,6,3,2,6],[4,7,4,8,2]]);
-				$('body').append(optimisation.hungarian_display(result.frames));
+				log(optimisation.hungarian_display(result.frames));
 
-				$('body').append('<h1 id="steppingstone">Stepping stone</h1>');
+				log('<h1 id="steppingstone">Stepping stone</h1>');
 				var assignments = matrix([[0,0,20,0],[17,0,0,21],[0,3,1,0]]);
 				var costs = matrix([[8,4,1,5],[7,2,8,9],[5,2,4,9]]);
 				var res = optimisation.stepping_stone(assignments,costs);
-                $('body').append(optimisation.stepping_stone_display(res.frames));
-                $('body').append('<hr>');
+                log(optimisation.stepping_stone_display(res.frames));
+                log('<hr>');
 
 				var assignments = matrix([[0,33,0,0],[0,13,38,0],[36,0,0,18]]);
 				var costs = matrix([[7,4,4,6],[3,7,4,5],[2,8,5,4]]);
 				var res = optimisation.stepping_stone(assignments,costs);
-				$('body').append(optimisation.stepping_stone_display(res.frames));
-                $('body').append('<hr>');
+				log(optimisation.stepping_stone_display(res.frames));
+                log('<hr>');
 
 				var assignments = matrix([[0,0,13,30],[0,9,0,0],[7,0,0,0]]);
 				var costs = matrix([[7,9,2,1],[3,8,7,4],[1,5,4,1]]);
 				var res = optimisation.stepping_stone(assignments,costs);
-				$('body').append(optimisation.stepping_stone_display(res.frames));
-                $('body').append('<hr>');
+				log(optimisation.stepping_stone_display(res.frames));
+                log('<hr>');
 
 				var assignments = matrix([[10,15,0,0],[0,0,0,6],[0,3,19,0]]);
 				var costs = matrix([[9,4,2,5],[6,7,8,1],[7,3,2,2]]);
 				var res = optimisation.stepping_stone(assignments,costs);
-				$('body').append(optimisation.stepping_stone_display(res.frames));
-                $('body').append('<hr>');
+				log(optimisation.stepping_stone_display(res.frames));
+                log('<hr>');
 
 				var assignments = matrix([[21,0,0,0],[11,51,0,0],[0,0,26,57]]);
 				var costs = matrix([[2,5,1,6],[4,2,6,6],[4,6,1,4]]);
 				var res = optimisation.stepping_stone(assignments,costs);
-				$('body').append(optimisation.stepping_stone_display(res.frames));
-                $('body').append('<hr>');
+				log(optimisation.stepping_stone_display(res.frames));
+                log('<hr>');
 
 				try {
 					var assignments = matrix([[0,106,0,0],[34,26,0,79],[0,0,189,0]]);
 					var costs = matrix([[3,1,3,2],[7,3,7,9],[2,4,2,4]]);
 					var res = optimisation.stepping_stone(assignments,costs);
-					$('body').append(optimisation.stepping_stone_display(res.frames));
-                    $('body').append('<hr>');
+					log(optimisation.stepping_stone_display(res.frames));
+                    log('<hr>');
 				} catch(e) {
 				}
 
